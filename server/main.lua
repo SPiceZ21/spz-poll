@@ -14,27 +14,6 @@ local function StartPoll(data)
     end
     
     TriggerClientEvent('spz-poll:client:start', -1, data)
-    
-    -- Auto-stop after timer
-    Citizen.SetTimeout((data.timer or 30) * 1000, function()
-        if activePoll then
-            local winnerIndex = 1
-            local maxVotes = -1
-            
-            for i, count in pairs(activePoll.votes) do
-                if count > maxVotes then
-                    maxVotes = count
-                    winnerIndex = i
-                end
-            end
-            
-            TriggerClientEvent('spz-poll:client:update', -1, { winner = { index = winnerIndex } })
-            
-            -- Wait a bit to show winner then close
-            Citizen.Wait(5000)
-            StopPoll()
-        end
-    end)
 end
 
 local function StopPoll()
@@ -53,6 +32,8 @@ RegisterNetEvent('spz-poll:server:vote', function(index)
     activePoll.participants[src] = index
     activePoll.votes[index] = (activePoll.votes[index] or 0) + 1
     
-    -- Optional: Sync vote counts in real-time? 
-    -- The original UI didn't show vote counts, only the winner at the end.
+    -- Forward to spz-races for early tally and state transition
+    -- spz-races expects { index = index } as first arg
+    -- source is preserved in the call stack for the local TriggerEvent
+    TriggerEvent("SPZ:pollVote", { index = index })
 end)
