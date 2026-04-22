@@ -35,5 +35,5 @@ RegisterNetEvent('spz-poll:server:vote', function(index)
     -- Forward to spz-races for early tally and state transition
     -- spz-races expects { index = index } as first arg
     -- source is preserved in the call stack for the local TriggerEvent
-    TriggerEvent("SPZ:pollVote", { index = index })
+    TriggerEvent("SPZ:pollVote", { index = index }, src)
 end)
