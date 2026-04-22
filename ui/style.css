@@ -43,7 +43,7 @@ body {
     z-index: 500;
     flex-direction: column;
     align-items: center;
-    width: 480px;
+    width: 528px;
     animation: poll-slide-up 0.28s ease-out both;
 }
 
