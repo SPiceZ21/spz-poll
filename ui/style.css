@@ -15,7 +15,7 @@
     --primary-blue: #00AEEF;
     --hud-accent-glow: rgba(255, 98, 0, 0.4);
     --font-main: 'Panchang', sans-serif;
-    --bg-dark: rgba(10, 10, 14, 0.97);
+    --bg-dark: rgba(10, 10, 14, 0.7);
 }
 
 * {
