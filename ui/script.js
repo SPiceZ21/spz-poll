@@ -108,6 +108,9 @@ function handleVote(index) {
 
 function updatePoll(data) {
     if (data.winner) {
+        // Pause timer immediately for instant transition feeling
+        timerFill.style.animationPlayState = 'paused';
+
         const winnerIdx = data.winner.index - 1;
         const cards = document.querySelectorAll('.poll-card');
         if (cards[winnerIdx]) {

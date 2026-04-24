@@ -34,13 +34,7 @@ exports('UpdatePoll', UpdatePoll)
 -- NUI Callbacks
 RegisterNUICallback('pollVote', function(data, cb)
     local index = data.index
-    TriggerServerEvent('spz-poll:server:vote', index)
-    
-    -- We keep focus but allow user to still see things. 
-    -- Actually, usually you want to keep focus until poll ends or they manually close?
-    -- For now, keep focus so they can't drive while voting if that's desired, 
-    -- or release it after vote?
-    -- User might want to see the timer finish.
+    TriggerServerEvent('SPZ:pollVote', { index = index })
     
     cb('ok')
 end)
