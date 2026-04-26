@@ -1,26 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPiceZ Poll</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPZ · Race Poll</title>
+<link rel="stylesheet" href="../../spz-ui/components/styles/spz-ui.css">
+<style>
+  html, body { width: 100vw; height: 100vh; overflow: hidden; background: transparent; }
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  
+  /* Poll Card Custom Styling */
+  .poll-card {
+    position: relative;
+    width: 340px;
+    background: var(--spz-surface-1);
+    border: 1px solid var(--spz-line);
+    border-radius: var(--spz-radius-4);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 120ms var(--spz-ease-out), border-color 120ms;
+    user-select: none;
+  }
+  .poll-card:hover { transform: translateY(-2px); border-color: var(--spz-line-strong); }
+  .poll-card[data-selected="true"] { border-color: var(--spz-orange); box-shadow: var(--spz-shadow-glow-soft); }
+  
+  .poll-bg-num {
+    position: absolute;
+    right: 8px; bottom: -12px;
+    font-family: var(--spz-font-display);
+    font-size: 84px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.03);
+    line-height: 1;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .poll-content { position: relative; z-index: 1; padding: 16px 18px; }
+  .poll-title { font-family: var(--spz-font-display); font-weight: 600; fontSize: 16px; color: var(--spz-fg-1); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 8px; }
+  
+  .poll-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+  
+  /* Winner highlights */
+  .winner-ring {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--spz-success);
+    border-radius: inherit;
+    animation: spz-pulse-winner 1s infinite;
+    pointer-events: none;
+  }
+  @keyframes spz-pulse-winner {
+    0%   { opacity: 0.4; }
+    50%  { opacity: 1; }
+    100% { opacity: 0.4; }
+  }
+</style>
 </head>
 <body>
-    <div id="poll-app">
-        <div id="poll-phase" class="poll-phase">CHOOSE TRACK</div>
+<div id="root"></div>
 
-        <div class="poll-container">
-            <div id="poll-options" class="poll-options">
-                <!-- Options will be injected here -->
-            </div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 
-            <div class="poll-timer">
-                <div id="poll-timer-fill" class="poll-timer-fill"></div>
-            </div>
+<script type="text/babel" src="../../spz-ui/components/Icon.jsx"></script>
+<script type="text/babel" src="../../spz-ui/components/Badge.jsx"></script>
+<script type="text/babel" src="../../spz-ui/components/Progress.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+function PollCard({ index, option, phase, selected, winner, onVote }) {
+  return (
+    <div className="poll-card" data-selected={selected} onClick={onVote}>
+      <span className="poll-bg-num">{index + 1}</span>
+      {winner && <div className="winner-ring" />}
+      
+      <div className="poll-content">
+        <div className="poll-title">{option.label || option.name}</div>
+        
+        <div className="poll-meta">
+          {phase === 'track' ? (
+            <>
+              <Badge variant="orange">{(option.type || 'Circuit').toUpperCase()}</Badge>
+              <Badge>{option.laps || 3} LAPS</Badge>
+              <Badge variant="outline">{option.checkpointCount || '?'} CPS</Badge>
+            </>
+          ) : (
+            <>
+              <Badge variant="orange">{(option.subtext || option.class || 'Class').toUpperCase()}</Badge>
+              {option.stats?.map((s, i) => (
+                <Badge key={i} variant="outline">{s.label}: {s.value}</Badge>
+              ))}
+            </>
+          )}
         </div>
+      </div>
+      
+      {selected && (
+        <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, background: 'var(--spz-orange)', width: '100%' }} />
+      )}
     </div>
+  );
+}
 
-    <script src="script.js"></script>
+function App() {
+  const [visible, setVisible] = useState(false);
+  const [phase, setPhase] = useState('track');
+  const [options, setOptions] = useState([]);
+  const [duration, setDuration] = useState(30);
+  const [timer, setTimer] = useState(100);
+  const [votedIndex, setVotedIndex] = useState(-1);
+  const [winnerIndex, setWinnerIndex] = useState(-1);
+
+  useEffect(() => {
+    const handler = (e) => {
+      const { action, data } = e.data;
+      if (action === 'openPoll') {
+        setPhase(data.phase || 'track');
+        setOptions(data.options || []);
+        setDuration(data.duration || 30);
+        setTimer(100);
+        setVotedIndex(-1);
+        setWinnerIndex(-1);
+        setVisible(true);
+      } else if (action === 'updatePoll') {
+        if (data.winner) setWinnerIndex(data.winner.index - 1);
+      } else if (action === 'closePoll') {
+        setVisible(false);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!visible || winnerIndex !== -1) return;
+    const interval = 100;
+    const step = (interval / (duration * 1000)) * 100;
+    const t = setInterval(() => {
+      setTimer(prev => Math.max(0, prev - step));
+    }, interval);
+    return () => clearInterval(t);
+  }, [visible, duration, winnerIndex]);
+
+  useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+
+  const vote = (idx) => {
+    if (votedIndex !== -1 || winnerIndex !== -1) return;
+    setVotedIndex(idx);
+    fetch(`https://${GetParentResourceName()}/pollVote`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: idx + 1 }),
+    }).catch(() => {});
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div className="overlay" style={{ flexDirection: 'column', gap: 32 }}>
+      {/* Header Area */}
+      <div style={{ textAlign: 'center', animation: 'spz-in 400ms var(--spz-ease-out)' }}>
+        <div className="spz-eyebrow" style={{ color: 'var(--spz-orange)', fontSize: 13, marginBottom: 8 }}>
+          {phase === 'track' ? 'Track Selection' : 'Vehicle Selection'}
+        </div>
+        <h1 style={{ fontFamily: 'var(--spz-font-display)', fontWeight: 800, fontSize: 42, color: 'var(--spz-fg-1)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+          {phase === 'track' ? 'Choose Your Path' : 'Select Performance'}
+        </h1>
+      </div>
+
+      {/* Options Grid */}
+      <div style={{ display: 'flex', gap: 20, animation: 'spz-in 500ms var(--spz-ease-out)' }}>
+        {options.map((opt, i) => (
+          <PollCard 
+            key={i} 
+            index={i} 
+            option={opt} 
+            phase={phase} 
+            selected={votedIndex === i} 
+            winner={winnerIndex === i}
+            onVote={() => vote(i)} 
+          />
+        ))}
+      </div>
+
+      {/* Timer Bar */}
+      <div style={{ width: 400, animation: 'spz-in 600ms var(--spz-ease-out)' }}>
+        <Progress value={timer} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontFamily: 'var(--spz-font-mono)', fontSize: 11, color: 'var(--spz-fg-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <span>Session Timer</span>
+          <span style={{ color: timer < 20 ? 'var(--spz-danger)' : 'var(--spz-fg-1)' }}>{Math.ceil((timer / 100) * duration)}s</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
