@@ -72,6 +72,7 @@
 /** @jsxFrag Fragment */
 const { h, render, Fragment } = preact;
 const { useState, useEffect } = preactHooks;
+const { Badge, Progress, Icon } = window;
 
 function PollCard({ index, option, phase, selected, winner, onVote }) {
   return (
@@ -118,7 +119,8 @@ function App() {
 
   useEffect(() => {
     const handler = (e) => {
-      const { action, data } = e.data;
+      if (!e.data || !e.data.action) return;
+      const { action, data = {} } = e.data;
       if (action === 'openPoll') {
         setPhase(data.phase || 'track');
         setOptions(data.options || []);
