@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SPZ · Race Poll</title>
-<link rel="stylesheet" href="../../spz-ui/components/styles/spz-ui.css">
+<link rel="stylesheet" href="https://cfx-nui-spz-ui/components/styles/spz-ui.css">
 <style>
   html, body { width: 100vw; height: 100vh; overflow: hidden; background: transparent; }
   .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
@@ -60,17 +60,17 @@
 <body>
 <div id="root"></div>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/preact@latest/dist/preact.min.js"></script>
+<script src="https://unpkg.com/preact@latest/hooks/dist/hooks.umd.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
-<script type="text/babel" src="../../spz-ui/components/Icon.jsx"></script>
-<script type="text/babel" src="../../spz-ui/components/Badge.jsx"></script>
-<script type="text/babel" src="../../spz-ui/components/Progress.jsx"></script>
+<script type="text/babel" src="https://cfx-nui-spz-ui/components.jsx"></script>
 
 <script type="text/babel">
-const { useState, useEffect } = React;
+/** @jsx h */
+const { h, render } = preact;
+const { useState, useEffect } = preactHooks;
 
 function PollCard({ index, option, phase, selected, winner, onVote }) {
   return (
@@ -198,7 +198,7 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+render(<App />, document.getElementById('root'));
 </script>
 </body>
 </html>
