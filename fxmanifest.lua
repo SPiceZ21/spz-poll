@@ -9,6 +9,8 @@ ui_page 'ui/index.html'
 
 files {
     'ui/index.html',
+    'ui/spz-ui.css',
+    'ui/components.jsx',
     'ui/style.css',
     'ui/script.js',
     'ui/public/fonts/*.ttf'
