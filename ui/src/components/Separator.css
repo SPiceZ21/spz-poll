@@ -1,0 +1,13 @@
+.spz-separator {
+  background-color: var(--gray-800);
+}
+
+.spz-separator.horizontal {
+  height: 1px;
+  width: 100%;
+}
+
+.spz-separator.vertical {
+  width: 1px;
+  height: 100%;
+}

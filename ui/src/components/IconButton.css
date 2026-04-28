@@ -1,0 +1,67 @@
+.spz-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--anim-fast) var(--anim-ease);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+/* Sizes */
+.spz-icon-button.sm {
+  width: 32px;
+  height: 32px;
+}
+
+.spz-icon-button.md {
+  width: 40px;
+  height: 40px;
+}
+
+.spz-icon-button.lg {
+  width: 56px;
+  height: 56px;
+}
+
+/* Variants */
+.spz-icon-button.primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.spz-icon-button.secondary {
+  background-color: var(--gray-800);
+  color: var(--color-white);
+  border-color: var(--gray-700);
+}
+
+.spz-icon-button.outline {
+  background-color: transparent;
+  color: var(--color-white);
+  border-color: var(--gray-600);
+}
+
+.spz-icon-button.ghost {
+  background-color: transparent;
+  color: var(--gray-400);
+}
+
+.spz-icon-button.ghost:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--color-white);
+}
+
+.spz-icon-button:hover:not(:disabled) {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+.spz-icon-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.spz-icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+:root {
+  /* Colors */
+  /* Grayscale - Zinc-inspired (Shadcn) */
+  --gray-50: #fafafa;
+  --gray-100: #f4f4f5;
+  --gray-200: #e4e4e7;
+  --gray-300: #d4d4d8;
+  --gray-400: #a1a1aa;
+  --gray-500: #71717a;
+  --gray-600: #52525b;
+  --gray-700: #3f3f46;
+  --gray-800: #27272a;
+  --gray-900: #18181b;
+  --gray-950: #09090b;
+
+  /* Primary Accent - Vibrant Orange */
+  --color-primary: #FF6200; 
+  --color-secondary: #E65800;
+  --color-black: #000000;
+  --color-white: #ffffff;
+
+  /* Spacing - Structured Scale */
+  --spacing-4: 0.25rem;
+  --spacing-8: 0.5rem;
+  --spacing-12: 0.75rem;
+  --spacing-16: 1rem;
+  --spacing-20: 1.25rem;
+  --spacing-24: 1.5rem;
+  --spacing-32: 2rem;
+  --spacing-40: 2.5rem;
+  --spacing-48: 3rem;
+  --spacing-64: 4rem;
+
+  /* Border Radius - Shadcn Style */
+  --radius-sm: calc(0.5rem - 4px);
+  --radius-md: calc(0.5rem - 2px);
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-pill: 9999px;
+
+  /* Shadows - Minimal Flat (Basically None) */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.4);
+
+  /* Animations */
+  --anim-fast: 150ms;
+  --anim-normal: 250ms;
+  --anim-slow: 400ms;
+  --anim-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Typography Scale - Balanced */
+  --font-hero: 3rem;
+  --font-h1: 2.25rem;
+  --font-h2: 1.875rem;
+  --font-h3: 1.5rem;
+  --font-h4: 1.25rem;
+  --font-body-lg: 1.125rem;
+  --font-body: 1rem;
+  --font-body-sm: 0.875rem;
+  --font-caption: 0.75rem;
+
+  /* Fonts - Typography First */
+  --font-primary: 'Panchang', sans-serif;
+  --font-branding: 'Panchang', sans-serif;
+  --font-secondary: 'Poppins', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Internal Padding */
+  --padding-sm: 12px;
+  --padding-md: 16px;
+  --padding-lg: 24px;
+
+  /* Z-Index Layers */
+  --z-base: 0;
+  --z-dock: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-popover: 500;
+  --z-tooltip: 600;
+  --z-toast: 700;
+
+  /* Sound Tokens (Logical) */
+  --sound-hover: 'hover.wav';
+  --sound-click: 'click.wav';
+  --sound-error: 'error.wav';
+  --sound-success: 'success.wav';
+  --sound-open: 'open.wav';
+  --sound-close: 'close.wav';
+
+  /* Haptic Tokens (Logical) */
+  --haptic-light: 'light';
+  --haptic-medium: 'medium';
+  --haptic-heavy: 'heavy';
+  --haptic-error: 'error';
+  --haptic-success: 'success';
+
+  /* Theme Colors (Base is Dark) */
+  --bg-app: var(--color-black);
+  --bg-card: var(--gray-900);
+  --border-card: var(--gray-800);
+  --text-main: var(--color-white);
+  --text-muted: var(--gray-400);
+}
+
+/* Theme Variants */
+.theme-racing {
+  --color-primary: #FF6200;
+  --color-secondary: #FF9F63;
+}
+
+.theme-freeroam {
+  --color-primary: #00A3FF;
+  --color-secondary: #63CFFF;
+}
+
+.theme-admin {
+  --color-primary: #8B5CF6;
+  --color-secondary: #A78BFA;
+}

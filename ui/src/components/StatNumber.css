@@ -1,0 +1,53 @@
+.spz-stat {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.stat-label {
+  font-family: var(--font-secondary);
+  font-size: 10px;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 2px;
+}
+
+.stat-value-group {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.stat-value {
+  font-family: var(--font-primary);
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--gray-50);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.stat-unit {
+  font-family: var(--font-primary);
+  font-size: var(--font-body-sm);
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+/* Sizes */
+.spz-stat.sm .stat-value { font-size: var(--font-h4); }
+.spz-stat.md .stat-value { font-size: var(--font-h2); }
+.spz-stat.lg .stat-value { font-size: var(--font-h1); }
+.spz-stat.hero .stat-value { font-size: var(--font-hero); }
+
+.stat-trend {
+  font-family: var(--font-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: var(--spacing-4);
+}
+
+.stat-trend.up { color: #10b981; }
+.stat-trend.down { color: #ef4444; }
+.stat-trend.neutral { color: var(--gray-400); }

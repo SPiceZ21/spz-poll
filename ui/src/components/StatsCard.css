@@ -1,0 +1,25 @@
+.spz-stats-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.stats-card-icon {
+  color: var(--color-primary);
+  opacity: 0.2;
+  position: absolute;
+  right: var(--spacing-16);
+  top: var(--spacing-16);
+  pointer-events: none;
+}
+
+.spz-stats-card:hover .stats-card-icon {
+  opacity: 0.5;
+  transform: scale(1.1);
+  transition: all var(--anim-normal) var(--anim-ease);
+}

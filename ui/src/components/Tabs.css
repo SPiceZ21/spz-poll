@@ -1,0 +1,65 @@
+.spz-tabs-container {
+  display: flex;
+  gap: var(--spacing-4);
+  border-bottom: 1px solid var(--gray-800);
+}
+
+.spz-tab-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-8);
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--gray-500);
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--anim-fast) var(--anim-ease);
+  position: relative;
+}
+
+.spz-tab-item:hover {
+  color: var(--gray-200);
+}
+
+.spz-tab-item.active {
+  color: var(--gray-50);
+}
+
+/* Default Underline Style */
+.spz-tabs-container.default .spz-tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-primary);
+}
+
+/* Pills Style - Shadcn */
+.spz-tabs-container.pills {
+  border-bottom: none;
+  background-color: var(--gray-900);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.spz-tabs-container.pills .spz-tab-item {
+  padding: 6px 12px;
+  border-radius: calc(var(--radius-md) - 2px);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.spz-tabs-container.pills .spz-tab-item.active {
+  background-color: var(--gray-800);
+  color: var(--gray-50);
+}
+
+.spz-tabs-container.pills .spz-tab-item.active .tab-icon {
+  color: var(--color-primary);
+}

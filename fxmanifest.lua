@@ -3,17 +3,12 @@ game 'gta5'
 
 description 'SPiceZ Poll Module'
 author 'SPiceZ'
-version '1.0.0'
+version '1.1.1'
 
-ui_page 'ui/index.html'
+ui_page 'ui/dist/index.html'
 
 files {
-    'ui/index.html',
-    'ui/spz-ui.css',
-    'ui/components.jsx',
-    'ui/style.css',
-    'ui/script.js',
-    'ui/public/fonts/*.ttf'
+    'ui/dist/**/*',
 }
 
 client_scripts {
