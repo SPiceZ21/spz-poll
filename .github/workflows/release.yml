@@ -48,7 +48,7 @@ jobs:
           PKG_DIR="release-pkg/$RESOURCE_NAME"
           mkdir -p "$PKG_DIR"
           
-          # Copy Lua scripts, configs, and assets
+          # Copy Lua scripts and assets
           [ -d "client" ] && cp -r client "$PKG_DIR/"
           [ -d "server" ] && cp -r server "$PKG_DIR/"
           [ -d "shared" ] && cp -r shared "$PKG_DIR/"
@@ -56,20 +56,27 @@ jobs:
           [ -d "locales" ] && cp -r locales "$PKG_DIR/"
           [ -f "fxmanifest.lua" ] && cp fxmanifest.lua "$PKG_DIR/"
           [ -f "config.lua" ] && cp config.lua "$PKG_DIR/"
-          [ -f "version.json" ] && cp version.json "$PKG_DIR/"
           
-          # Copy UI Build (dist)
+          # Smart UI Packaging
           if [ -d "ui/dist" ]; then
+            echo "Packaging Vite UI (ui/dist)"
             mkdir -p "$PKG_DIR/ui/dist"
             cp -r ui/dist/* "$PKG_DIR/ui/dist/"
           elif [ -d "html/dist" ]; then
+            echo "Packaging Vite UI (html/dist)"
             mkdir -p "$PKG_DIR/html/dist"
             cp -r html/dist/* "$PKG_DIR/html/dist/"
+          elif [ -d "ui" ]; then
+            echo "Packaging Raw UI (ui/)"
+            mkdir -p "$PKG_DIR/ui"
+            cp -r ui/* "$PKG_DIR/ui/"
+            rm -rf "$PKG_DIR/ui/node_modules" "$PKG_DIR/ui/src" 2>/dev/null || true
+          elif [ -d "html" ]; then
+            echo "Packaging Raw UI (html/)"
+            mkdir -p "$PKG_DIR/html"
+            cp -r html/* "$PKG_DIR/html/"
+            rm -rf "$PKG_DIR/html/node_modules" "$PKG_DIR/html/src" 2>/dev/null || true
           fi
-          
-          # Verify
-          echo "Package Structure:"
-          find "$PKG_DIR" -maxdepth 3
           
           cd release-pkg
           zip -rq "../${RESOURCE_NAME}.zip" "$RESOURCE_NAME"
