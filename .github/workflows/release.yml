@@ -1,4 +1,4 @@
-﻿name: Release
+name: Release
 
 on:
   push:
@@ -20,79 +20,72 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
-
-      - name: Debug Environment
-        run: |
-          echo "Checking paths..."
-          which node
-          which npm
-          which zip
-          which find
-          node -v
-          npm -v
+          node-version: "22"
 
       - name: Install & Build UI
+        shell: bash
         run: |
-          set -e
           if [ -d "ui" ] && [ -f "ui/package.json" ]; then
             echo "Building UI in ui/ folder..."
             cd ui
             npm install --no-audit --no-fund
             npm run build
-            echo "Post-build contents of ui/:"
-            ls -F
-            cd ..
+            echo "Post-build check:"
+            ls -la dist || echo "ERROR: dist folder not found in ui/"
           elif [ -d "html" ] && [ -f "html/package.json" ]; then
             echo "Building UI in html/ folder..."
             cd html
             npm install --no-audit --no-fund
             npm run build
-            echo "Post-build contents of html/:"
-            ls -F
-            cd ..
+            echo "Post-build check:"
+            ls -la dist || echo "ERROR: dist folder not found in html/"
           else
-            echo "No UI directory found."
+            echo "No UI directory (ui/ or html/) found with package.json"
           fi
 
-      - name: Remove node_modules
+      - name: Remove node_modules (Clean Version)
+        shell: bash
         run: |
           rm -rf ui/node_modules 2>/dev/null || true
           rm -rf html/node_modules 2>/dev/null || true
+          echo "node_modules deleted for clean release."
 
       - name: Package Resource
+        shell: bash
         run: |
-          set -e
           RESOURCE_NAME=$(basename $(pwd))
           echo "Packaging resource: $RESOURCE_NAME"
           
           PKG_DIR="release-pkg/$RESOURCE_NAME"
           mkdir -p "$PKG_DIR"
           
-          # Copy Lua and manifest
-          [ -d "client" ] && cp -r client "$PKG_DIR/"
-          [ -d "server" ] && cp -r server "$PKG_DIR/"
-          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua "$PKG_DIR/"
+          # Copy Lua scripts and manifest
+          [ -d "client" ] && cp -r client "$PKG_DIR/" && echo "Copied client/"
+          [ -d "server" ] && cp -r server "$PKG_DIR/" && echo "Copied server/"
+          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua "$PKG_DIR/" && echo "Copied fxmanifest.lua"
           
-          # Copy UI Build
+          # Copy UI Build (dist)
           if [ -d "ui/dist" ]; then
-            echo "Packaging ui/dist"
+            echo "Found ui/dist. Copying to $PKG_DIR/ui/dist"
             mkdir -p "$PKG_DIR/ui/dist"
             cp -r ui/dist/* "$PKG_DIR/ui/dist/"
           elif [ -d "html/dist" ]; then
-            echo "Packaging html/dist"
+            echo "Found html/dist. Copying to $PKG_DIR/html/dist"
             mkdir -p "$PKG_DIR/html/dist"
             cp -r html/dist/* "$PKG_DIR/html/dist/"
           fi
           
-          echo "Final Package structure:"
-          ls -R "$PKG_DIR"
+          # Final Verification
+          echo "Final Package Structure:"
+          find "$PKG_DIR" -maxdepth 3
           
           cd release-pkg
-          zip -r "../${RESOURCE_NAME}.zip" "$RESOURCE_NAME"
+          zip -rq "../${RESOURCE_NAME}.zip" "$RESOURCE_NAME"
+          echo "Created ${RESOURCE_NAME}.zip"
 
       - name: Generate Release Notes
         id: notes
+        shell: bash
         run: |
           TAG="v$(date +"%Y.%m.%d")-${{ github.run_number }}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
@@ -117,4 +110,3 @@ jobs:
           body_path: release_notes.md
           files: "*.zip"
           make_latest: true
-
