@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install & Build UI
         run: |
@@ -42,33 +42,38 @@ jobs:
 
       - name: Package Resource
         run: |
-          # Get the resource name from the current directory or manifest
           RESOURCE_NAME=$(basename $(pwd))
-          mkdir -p release-artifacts/${RESOURCE_NAME}
+          echo "Packaging $RESOURCE_NAME"
+          mkdir -p release-pkg/${RESOURCE_NAME}
           
           # Copy Lua scripts and manifest
-          cp -r client release-artifacts/${RESOURCE_NAME}/ 2>/dev/null || true
-          cp -r server release-artifacts/${RESOURCE_NAME}/ 2>/dev/null || true
-          cp fxmanifest.lua release-artifacts/${RESOURCE_NAME}/ 2>/dev/null || true
+          [ -d "client" ] && cp -r client release-pkg/${RESOURCE_NAME}/
+          [ -d "server" ] && cp -r server release-pkg/${RESOURCE_NAME}/
+          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua release-pkg/${RESOURCE_NAME}/
           
-          # Copy UI Build (dist) only
+          # Copy UI Build (dist) explicitly
           if [ -d "ui/dist" ]; then
-            mkdir -p release-artifacts/${RESOURCE_NAME}/ui
-            cp -r ui/dist release-artifacts/${RESOURCE_NAME}/ui/
+            echo "Copying ui/dist contents..."
+            mkdir -p release-pkg/${RESOURCE_NAME}/ui/dist
+            cp -r ui/dist/* release-pkg/${RESOURCE_NAME}/ui/dist/
           elif [ -d "html/dist" ]; then
-            mkdir -p release-artifacts/${RESOURCE_NAME}/html
-            cp -r html/dist release-artifacts/${RESOURCE_NAME}/html/
+            echo "Copying html/dist contents..."
+            mkdir -p release-pkg/${RESOURCE_NAME}/html/dist
+            cp -r html/dist/* release-pkg/${RESOURCE_NAME}/html/dist/
           fi
           
-          # Zip the final folder
-          cd release-artifacts
+          # Debug structure
+          echo "Final Package Structure:"
+          find release-pkg -maxdepth 3
+          
+          cd release-pkg
           zip -rq ../${RESOURCE_NAME}.zip ${RESOURCE_NAME}
           echo "Packaged ${RESOURCE_NAME}.zip"
 
       - name: Generate Release Notes
         id: notes
         run: |
-          TAG="v$(date +'%Y.%m.%d')-${{ github.run_number }}"
+          TAG="v$(date +"%Y.%m.%d")-${{ github.run_number }}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           
           echo "## Release Notes" > release_notes.md
