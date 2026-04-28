@@ -1,33 +1,35 @@
-import './Button.css';
+﻿import "./Button.css";
 
 interface ButtonProps {
   children: any;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   loading?: boolean;
   className?: string;
   onClick?: () => void;
+  style?: any;
 }
 
 export const Button = ({
   children,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   disabled = false,
   loading = false,
-  className = '',
-  onClick
+  className = "",
+  onClick,
+  style,
 }: ButtonProps) => {
   return (
     <button
-      className={`spz-button ${variant} ${size} ${className} ${loading ? 'loading' : ''}`}
+      className={`spz-button ${variant} ${size} ${className} ${loading ? "loading" : ""}`}
       disabled={disabled || loading}
       onClick={onClick}
+      style={style}
     >
-      {loading ? (
-        <span className="loader"></span>
-      ) : children}
+      {loading ? <span className="loader"></span> : children}
     </button>
   );
 };
+

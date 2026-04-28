@@ -1,0 +1,94 @@
+﻿name: Release
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & Build UI
+        run: |
+          if [ -d "ui" ] && [ -f "ui/package.json" ]; then
+            echo "::group::Building UI"
+            cd ui && npm ci && npm run build
+            echo "::endgroup::"
+          elif [ -d "html" ] && [ -f "html/package.json" ]; then
+            echo "::group::Building HTML UI"
+            cd html && npm ci && npm run build
+            echo "::endgroup::"
+          fi
+
+      - name: Remove node_modules (Clean Version)
+        run: |
+          rm -rf ui/node_modules 2>/dev/null || true
+          rm -rf html/node_modules 2>/dev/null || true
+          echo "node_modules deleted for clean release."
+
+      - name: Package Resource
+        run: |
+          # Get the resource name from the current directory or manifest
+          RESOURCE_NAME=$(basename $(pwd))
+          mkdir -p release-artifacts/${RESOURCE_NAME}
+          
+          # Copy Lua scripts and manifest
+          cp -r client release-artifacts/${RESOURCE_NAME}/ 2>/dev/null || true
+          cp -r server release-artifacts/${RESOURCE_NAME}/ 2>/dev/null || true
+          cp fxmanifest.lua release-artifacts/${RESOURCE_NAME}/ 2>/dev/null || true
+          
+          # Copy UI Build (dist) only
+          if [ -d "ui/dist" ]; then
+            mkdir -p release-artifacts/${RESOURCE_NAME}/ui
+            cp -r ui/dist release-artifacts/${RESOURCE_NAME}/ui/
+          elif [ -d "html/dist" ]; then
+            mkdir -p release-artifacts/${RESOURCE_NAME}/html
+            cp -r html/dist release-artifacts/${RESOURCE_NAME}/html/
+          fi
+          
+          # Zip the final folder
+          cd release-artifacts
+          zip -rq ../${RESOURCE_NAME}.zip ${RESOURCE_NAME}
+          echo "Packaged ${RESOURCE_NAME}.zip"
+
+      - name: Generate Release Notes
+        id: notes
+        run: |
+          TAG="v$(date +'%Y.%m.%d')-${{ github.run_number }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          
+          echo "## Release Notes" > release_notes.md
+          echo "Built from commit \`${{ github.sha }}\`" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Changes" >> release_notes.md
+          
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            git log --oneline --no-merges -n 20 >> release_notes.md
+          else
+            git log ${LAST_TAG}..HEAD --oneline --no-merges >> release_notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.notes.outputs.tag }}
+          name: "Release ${{ steps.notes.outputs.tag }}"
+          body_path: release_notes.md
+          files: "*.zip"
+          make_latest: true
+
