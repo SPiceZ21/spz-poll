@@ -24,20 +24,25 @@ jobs:
 
       - name: Install & Build UI
         run: |
+          set -e
           if [ -d "ui" ] && [ -f "ui/package.json" ]; then
-            echo "::group::Building UI"
-            cd ui && npm ci && npm run build
-            echo "Build finished. Contents of ui/dist:"
-            ls -R dist || echo "dist folder not found!"
+            echo "Building UI in ui/ folder..."
+            cd ui
+            npm install --no-audit --no-fund
+            npm run build
+            echo "Post-build check:"
+            ls -la dist || echo "ERROR: dist folder not found in ui/"
             cd ..
-            echo "::endgroup::"
           elif [ -d "html" ] && [ -f "html/package.json" ]; then
-            echo "::group::Building HTML UI"
-            cd html && npm ci && npm run build
-            echo "Build finished. Contents of html/dist:"
-            ls -R dist || echo "dist folder not found!"
+            echo "Building UI in html/ folder..."
+            cd html
+            npm install --no-audit --no-fund
+            npm run build
+            echo "Post-build check:"
+            ls -la dist || echo "ERROR: dist folder not found in html/"
             cd ..
-            echo "::endgroup::"
+          else
+            echo "No UI directory (ui/ or html/) found with package.json"
           fi
 
       - name: Remove node_modules (Clean Version)
@@ -48,6 +53,7 @@ jobs:
 
       - name: Package Resource
         run: |
+          set -e
           RESOURCE_NAME=$(basename $(pwd))
           echo "Packaging resource: $RESOURCE_NAME"
           
@@ -69,13 +75,11 @@ jobs:
             mkdir -p "$PKG_DIR/html/dist"
             cp -r html/dist/* "$PKG_DIR/html/dist/"
           else
-            echo "CRITICAL: No build output found! UI will be missing from release."
-            echo "Current directory contents:"
-            ls -F
+            echo "WARNING: No build output found! UI will be missing from release."
           fi
           
-          # Verify package structure
-          echo "Final Package structure:"
+          # Final Verification
+          echo "Final Package Structure:"
           find "$PKG_DIR" -maxdepth 3
           
           cd release-pkg
