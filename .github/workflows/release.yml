@@ -27,10 +27,16 @@ jobs:
           if [ -d "ui" ] && [ -f "ui/package.json" ]; then
             echo "::group::Building UI"
             cd ui && npm ci && npm run build
+            echo "Build finished. Contents of ui/dist:"
+            ls -R dist || echo "dist folder not found!"
+            cd ..
             echo "::endgroup::"
           elif [ -d "html" ] && [ -f "html/package.json" ]; then
             echo "::group::Building HTML UI"
             cd html && npm ci && npm run build
+            echo "Build finished. Contents of html/dist:"
+            ls -R dist || echo "dist folder not found!"
+            cd ..
             echo "::endgroup::"
           fi
 
@@ -43,32 +49,38 @@ jobs:
       - name: Package Resource
         run: |
           RESOURCE_NAME=$(basename $(pwd))
-          echo "Packaging $RESOURCE_NAME"
-          mkdir -p release-pkg/${RESOURCE_NAME}
+          echo "Packaging resource: $RESOURCE_NAME"
+          
+          PKG_DIR="release-pkg/$RESOURCE_NAME"
+          mkdir -p "$PKG_DIR"
           
           # Copy Lua scripts and manifest
-          [ -d "client" ] && cp -r client release-pkg/${RESOURCE_NAME}/
-          [ -d "server" ] && cp -r server release-pkg/${RESOURCE_NAME}/
-          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua release-pkg/${RESOURCE_NAME}/
+          [ -d "client" ] && cp -r client "$PKG_DIR/" && echo "Copied client/"
+          [ -d "server" ] && cp -r server "$PKG_DIR/" && echo "Copied server/"
+          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua "$PKG_DIR/" && echo "Copied fxmanifest.lua"
           
-          # Copy UI Build (dist) explicitly
+          # Copy UI Build (dist)
           if [ -d "ui/dist" ]; then
-            echo "Copying ui/dist contents..."
-            mkdir -p release-pkg/${RESOURCE_NAME}/ui/dist
-            cp -r ui/dist/* release-pkg/${RESOURCE_NAME}/ui/dist/
+            echo "Found ui/dist. Copying to $PKG_DIR/ui/dist"
+            mkdir -p "$PKG_DIR/ui/dist"
+            cp -r ui/dist/* "$PKG_DIR/ui/dist/"
           elif [ -d "html/dist" ]; then
-            echo "Copying html/dist contents..."
-            mkdir -p release-pkg/${RESOURCE_NAME}/html/dist
-            cp -r html/dist/* release-pkg/${RESOURCE_NAME}/html/dist/
+            echo "Found html/dist. Copying to $PKG_DIR/html/dist"
+            mkdir -p "$PKG_DIR/html/dist"
+            cp -r html/dist/* "$PKG_DIR/html/dist/"
+          else
+            echo "CRITICAL: No build output found! UI will be missing from release."
+            echo "Current directory contents:"
+            ls -F
           fi
           
-          # Debug structure
-          echo "Final Package Structure:"
-          find release-pkg -maxdepth 3
+          # Verify package structure
+          echo "Final Package structure:"
+          find "$PKG_DIR" -maxdepth 3
           
           cd release-pkg
-          zip -rq ../${RESOURCE_NAME}.zip ${RESOURCE_NAME}
-          echo "Packaged ${RESOURCE_NAME}.zip"
+          zip -rq "../${RESOURCE_NAME}.zip" "$RESOURCE_NAME"
+          echo "Created ${RESOURCE_NAME}.zip"
 
       - name: Generate Release Notes
         id: notes
