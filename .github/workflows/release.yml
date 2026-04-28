@@ -29,6 +29,8 @@ jobs:
             echo "Building UI in ui/ folder..."
             cd ui
             npm install --no-audit --no-fund
+            # Fix permissions for binaries
+            [ -d "node_modules/.bin" ] && chmod +x node_modules/.bin/* || true
             npm run build
             echo "Post-build check:"
             ls -la dist || echo "ERROR: dist folder not found in ui/"
@@ -36,6 +38,8 @@ jobs:
             echo "Building UI in html/ folder..."
             cd html
             npm install --no-audit --no-fund
+            # Fix permissions for binaries
+            [ -d "node_modules/.bin" ] && chmod +x node_modules/.bin/* || true
             npm run build
             echo "Post-build check:"
             ls -la dist || echo "ERROR: dist folder not found in html/"
