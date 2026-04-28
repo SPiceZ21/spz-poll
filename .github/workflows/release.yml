@@ -29,63 +29,50 @@ jobs:
             echo "Building UI in ui/ folder..."
             cd ui
             npm install --no-audit --no-fund
-            # Fix permissions for binaries
             [ -d "node_modules/.bin" ] && chmod +x node_modules/.bin/* || true
             npm run build
-            echo "Post-build check:"
-            ls -la dist || echo "ERROR: dist folder not found in ui/"
+            cd ..
           elif [ -d "html" ] && [ -f "html/package.json" ]; then
             echo "Building UI in html/ folder..."
             cd html
             npm install --no-audit --no-fund
-            # Fix permissions for binaries
             [ -d "node_modules/.bin" ] && chmod +x node_modules/.bin/* || true
             npm run build
-            echo "Post-build check:"
-            ls -la dist || echo "ERROR: dist folder not found in html/"
-          else
-            echo "No UI directory (ui/ or html/) found with package.json"
+            cd ..
           fi
-
-      - name: Remove node_modules (Clean Version)
-        shell: bash
-        run: |
-          rm -rf ui/node_modules 2>/dev/null || true
-          rm -rf html/node_modules 2>/dev/null || true
-          echo "node_modules deleted for clean release."
 
       - name: Package Resource
         shell: bash
         run: |
           RESOURCE_NAME=$(basename $(pwd))
-          echo "Packaging resource: $RESOURCE_NAME"
-          
           PKG_DIR="release-pkg/$RESOURCE_NAME"
           mkdir -p "$PKG_DIR"
           
-          # Copy Lua scripts and manifest
-          [ -d "client" ] && cp -r client "$PKG_DIR/" && echo "Copied client/"
-          [ -d "server" ] && cp -r server "$PKG_DIR/" && echo "Copied server/"
-          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua "$PKG_DIR/" && echo "Copied fxmanifest.lua"
+          # Copy Lua scripts, configs, and assets
+          [ -d "client" ] && cp -r client "$PKG_DIR/"
+          [ -d "server" ] && cp -r server "$PKG_DIR/"
+          [ -d "shared" ] && cp -r shared "$PKG_DIR/"
+          [ -d "data" ] && cp -r data "$PKG_DIR/"
+          [ -d "locales" ] && cp -r locales "$PKG_DIR/"
+          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua "$PKG_DIR/"
+          [ -f "config.lua" ] && cp config.lua "$PKG_DIR/"
+          [ -f "version.json" ] && cp version.json "$PKG_DIR/"
           
           # Copy UI Build (dist)
           if [ -d "ui/dist" ]; then
-            echo "Found ui/dist. Copying to $PKG_DIR/ui/dist"
             mkdir -p "$PKG_DIR/ui/dist"
             cp -r ui/dist/* "$PKG_DIR/ui/dist/"
           elif [ -d "html/dist" ]; then
-            echo "Found html/dist. Copying to $PKG_DIR/html/dist"
             mkdir -p "$PKG_DIR/html/dist"
             cp -r html/dist/* "$PKG_DIR/html/dist/"
           fi
           
-          # Final Verification
-          echo "Final Package Structure:"
+          # Verify
+          echo "Package Structure:"
           find "$PKG_DIR" -maxdepth 3
           
           cd release-pkg
           zip -rq "../${RESOURCE_NAME}.zip" "$RESOURCE_NAME"
-          echo "Created ${RESOURCE_NAME}.zip"
 
       - name: Generate Release Notes
         id: notes
@@ -93,11 +80,8 @@ jobs:
         run: |
           TAG="v$(date +"%Y.%m.%d")-${{ github.run_number }}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          
           echo "## Release Notes" > release_notes.md
           echo "Built from commit \`${{ github.sha }}\`" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### Changes" >> release_notes.md
           
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
