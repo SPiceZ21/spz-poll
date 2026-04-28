@@ -20,7 +20,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
+
+      - name: Debug Environment
+        run: |
+          echo "Checking paths..."
+          which node
+          which npm
+          which zip
+          which find
+          node -v
+          npm -v
 
       - name: Install & Build UI
         run: |
@@ -30,26 +40,25 @@ jobs:
             cd ui
             npm install --no-audit --no-fund
             npm run build
-            echo "Post-build check:"
-            ls -la dist || echo "ERROR: dist folder not found in ui/"
+            echo "Post-build contents of ui/:"
+            ls -F
             cd ..
           elif [ -d "html" ] && [ -f "html/package.json" ]; then
             echo "Building UI in html/ folder..."
             cd html
             npm install --no-audit --no-fund
             npm run build
-            echo "Post-build check:"
-            ls -la dist || echo "ERROR: dist folder not found in html/"
+            echo "Post-build contents of html/:"
+            ls -F
             cd ..
           else
-            echo "No UI directory (ui/ or html/) found with package.json"
+            echo "No UI directory found."
           fi
 
-      - name: Remove node_modules (Clean Version)
+      - name: Remove node_modules
         run: |
           rm -rf ui/node_modules 2>/dev/null || true
           rm -rf html/node_modules 2>/dev/null || true
-          echo "node_modules deleted for clean release."
 
       - name: Package Resource
         run: |
@@ -60,31 +69,27 @@ jobs:
           PKG_DIR="release-pkg/$RESOURCE_NAME"
           mkdir -p "$PKG_DIR"
           
-          # Copy Lua scripts and manifest
-          [ -d "client" ] && cp -r client "$PKG_DIR/" && echo "Copied client/"
-          [ -d "server" ] && cp -r server "$PKG_DIR/" && echo "Copied server/"
-          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua "$PKG_DIR/" && echo "Copied fxmanifest.lua"
+          # Copy Lua and manifest
+          [ -d "client" ] && cp -r client "$PKG_DIR/"
+          [ -d "server" ] && cp -r server "$PKG_DIR/"
+          [ -f "fxmanifest.lua" ] && cp fxmanifest.lua "$PKG_DIR/"
           
-          # Copy UI Build (dist)
+          # Copy UI Build
           if [ -d "ui/dist" ]; then
-            echo "Found ui/dist. Copying to $PKG_DIR/ui/dist"
+            echo "Packaging ui/dist"
             mkdir -p "$PKG_DIR/ui/dist"
             cp -r ui/dist/* "$PKG_DIR/ui/dist/"
           elif [ -d "html/dist" ]; then
-            echo "Found html/dist. Copying to $PKG_DIR/html/dist"
+            echo "Packaging html/dist"
             mkdir -p "$PKG_DIR/html/dist"
             cp -r html/dist/* "$PKG_DIR/html/dist/"
-          else
-            echo "WARNING: No build output found! UI will be missing from release."
           fi
           
-          # Final Verification
-          echo "Final Package Structure:"
-          find "$PKG_DIR" -maxdepth 3
+          echo "Final Package structure:"
+          ls -R "$PKG_DIR"
           
           cd release-pkg
-          zip -rq "../${RESOURCE_NAME}.zip" "$RESOURCE_NAME"
-          echo "Created ${RESOURCE_NAME}.zip"
+          zip -r "../${RESOURCE_NAME}.zip" "$RESOURCE_NAME"
 
       - name: Generate Release Notes
         id: notes
