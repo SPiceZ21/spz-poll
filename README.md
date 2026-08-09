@@ -1,35 +1,44 @@
 # spz-poll
-> Track & vehicle vote poll · `v1.1.1`
 
-## Scripts
+> Track and vehicle vote between race cycles · `v1.1.2`
 
-| Side   | File              | Purpose                                          |
-| ------ | ----------------- | ------------------------------------------------ |
-| Client | `client/main.lua` | Poll UI display, vote submission, NUI bridge     |
-| Server | `server/main.lua` | Poll lifecycle management, vote tallying         |
+## Overview
 
-## NUI
+`spz-poll` runs the vote that decides the next track and vehicle class. `spz-races` starts
+it during the poll phase, players pick from the options, and the tally is returned when the
+window closes.
 
-**Stack:** Vite · Preact · TypeScript · spz-ui
+## Structure
 
-```
-ui/
-├── src/
-│   ├── app.tsx
-│   ├── components/       # spz-ui components
-│   └── styles/
-└── dist/                 # built output (served by FiveM)
-    └── index.html
-```
-
-Build: `cd ui && npm run build`
+| Side | File | Purpose |
+|---|---|---|
+| Client | `client/main.lua` | Poll display, vote submission, NUI bridge |
+| Server | `server/main.lua` | Poll lifecycle and vote tallying |
 
 ## Exports
 
-| Export      | Description                              |
-| ----------- | ---------------------------------------- |
-| `StartPoll` | Start a new track or vehicle vote poll   |
-| `StopPoll`  | End the active poll and return results   |
+| Export | Description |
+|---|---|
+| `StartPoll` | Open a poll with a set of options |
+| `UpdatePoll` | Push updated tallies to open clients |
+| `StopPoll` | Close the poll and return the winner |
 
-## CI
-Built and released via `.github/workflows/release.yml` on push to `main`.
+## NUI
+
+Vite · Preact · TypeScript on the [spz-ui](../spz-ui/README.md) component set.
+
+```bash
+cd ui && npm install && npm run build   # → ui/dist/index.html
+```
+
+## Commands
+
+`/testpoll` (development helper)
+
+## Dependencies
+
+`ox_lib`
+
+---
+
+Part of [SPiceZ-Core](../README.md) · GPL-3.0
