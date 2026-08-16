@@ -13,7 +13,7 @@ interface PollOption {
 
 export function App() {
   const [visible, setVisible] = useState(false)
-  const [phase, setPhase] = useState<'track' | 'vehicle'>('track')
+  const [phase, setPhase] = useState<'track' | 'vehicle' | 'traffic'>('track')
   const [options, setOptions] = useState<PollOption[]>([])
   const [duration, setDuration] = useState(30)
   const [timer, setTimer] = useState(100)
@@ -65,10 +65,10 @@ export function App() {
     <div class="poll-overlay">
       <div class="poll-header">
         <div class="poll-phase-label">
-          {phase === 'track' ? 'Track Selection' : 'Vehicle Selection'}
+          {phase === 'track' ? 'Track Selection' : phase === 'traffic' ? 'Traffic Selection' : 'Vehicle Selection'}
         </div>
         <h1 class="poll-main-title">
-          {phase === 'track' ? 'Choose Your Path' : 'Select Performance'}
+          {phase === 'track' ? 'Choose Your Path' : phase === 'traffic' ? 'Set Road Density' : 'Select Performance'}
         </h1>
       </div>
 
