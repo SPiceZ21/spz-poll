@@ -50,7 +50,7 @@
 
 .third-eye-icon-wrapper:hover {
   border-color: var(--color-primary);
-  box-shadow: 0 0 20px rgba(255, 98, 0, 0.2);
+  box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.2);
 }
 
 /* Independent Menu Container (Now just a wrapper) */
@@ -109,7 +109,7 @@
   border-color: var(--color-primary);
   color: var(--color-white);
   transform: translateX(5px) !important;
-  box-shadow: 0 4px 15px rgba(255, 98, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .third-eye-option:hover:not(.disabled) .third-eye-option-icon {

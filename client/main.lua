@@ -1,3 +1,15 @@
+-- Base theme (server.cfg spz_theme_* convars via spz-core).
+local function pushPollTheme(theme)
+    if theme and next(theme) then
+        SendNUIMessage({ action = 'theme', theme = theme })
+    end
+end
+CreateThread(function()
+    local ok, theme = pcall(function() return exports['spz-core']:GetTheme() end)
+    if ok then pushPollTheme(theme) end
+end)
+AddEventHandler('SPZ:themeUpdated', function(theme) pushPollTheme(theme) end)
+
 local isPollOpen = false
 
 ---@param data table { phase: string, timer: number, options: table }

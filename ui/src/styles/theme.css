@@ -17,6 +17,7 @@
 
   /* Primary Accent - Vibrant Orange */
   --color-primary: #FF6200; 
+  --color-primary-rgb: 255, 98, 0;
   --color-secondary: #E65800;
   --color-black: #000000;
   --color-white: #ffffff;

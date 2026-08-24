@@ -23,7 +23,7 @@
 }
 
 .spz-badge.primary {
-  border-color: rgba(255, 98, 0, 0.3);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
   color: var(--color-primary);
 }
 

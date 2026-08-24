@@ -24,3 +24,7 @@ exports {
     'StopPoll'
 }
 
+dependencies {
+    'spz-core',
+}
+
