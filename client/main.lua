@@ -17,6 +17,7 @@ local function StartPoll(data)
     if not data then return end
     isPollOpen = true
     SetNuiFocus(true, true)
+
     SendNUIMessage({
         action = "openPoll",
         data = data
@@ -47,9 +48,10 @@ exports('UpdatePoll', UpdatePoll)
 RegisterNUICallback('pollVote', function(data, cb)
     local index = data.index
     TriggerServerEvent('SPZ:pollVote', { index = index })
-    
+
     cb('ok')
 end)
+
 
 -- Events from server
 RegisterNetEvent('spz-poll:client:start', function(data)
@@ -70,8 +72,20 @@ RegisterCommand('testpoll', function()
         phase = "track",
         timer = 15,
         options = {
-            { label = "Downtown Loop", type = "circuit", laps = 3, checkpointCount = 24 },
-            { label = "Great Ocean Run", type = "sprint", laps = 1, checkpointCount = 42 }
+            -- `path` is the route in world XY (see spz-races/server/poll.lua);
+            -- a couple of hand-made shapes here so /testpoll exercises the map
+            -- preview for both a closed circuit and a point-to-point sprint.
+            { label = "Downtown Loop", type = "circuit", laps = 3, checkpointCount = 24, loop = true,
+              path = {
+                { x = 250, y = -960 }, { x = 700, y = -860 }, { x = 1020, y = -820 },
+                { x = 720, y = -580 }, { x = 420, y = -290 }, { x = 175, y = -355 },
+                { x = -240, y = -640 }, { x = 10, y = -900 },
+              } },
+            { label = "Great Ocean Run", type = "sprint", laps = 1, checkpointCount = 42, loop = false,
+              path = {
+                { x = -1800, y = -1200 }, { x = -2100, y = 300 }, { x = -1600, y = 1900 },
+                { x = -400, y = 3100 }, { x = 900, y = 3600 }, { x = 1900, y = 3800 },
+              } },
         }
     }
     StartPoll(testData)
@@ -85,4 +99,21 @@ RegisterCommand('testpoll', function()
     Citizen.SetTimeout(15000, function()
         StopPoll()
     end)
+end, false)
+
+-- Vehicle ballot. Models are spawn names, same as the real ballot sends
+-- (spz-races/server/poll.lua uses veh.model).
+RegisterCommand('testpollcar', function(_, args)
+    StartPoll({
+        phase = "vehicle",
+        timer = 20,
+        duration = 20,
+        options = {
+            { name = args[1] or "sultan",  label = "Sultan",  subtext = "Class C",
+              stats = { { label = "Speed", value = "84" }, { label = "Accel", value = "72" } } },
+            { name = args[2] or "comet2",  label = "Comet",   subtext = "Class B",
+              stats = { { label = "Speed", value = "91" }, { label = "Accel", value = "80" } } },
+        }
+    })
+    Citizen.SetTimeout(20000, function() StopPoll() end)
 end, false)
