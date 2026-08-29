@@ -21,18 +21,44 @@ interface PollOption {
    the tighter of the two axes, so the plot keeps its real proportions instead of
    being stretched to fill the card.
 
-   The map itself is optional. Drop a top-down render of the world at
-   ui/public/map.jpg and it appears underneath, cropped to the track's corner of
-   the world; without it the plot falls back to a grid, which is why the route,
-   the start marker and the frame are all drawn independently of the image. */
+   The map underneath is Rockstar's own Social Club tile set, fetched at runtime
+   (256px tiles, zoom 0-6, doubling each level: z4 is 8x12 tiles = 2048x3072).
+   Only the tiles covering the track are requested, at the zoom level closest to
+   the card's own resolution. Tiles are optional — if they fail (no connectivity,
+   server moved) the plot falls back to a grid, which is why the route, the start
+   marker and the frame are all drawn independently of the image. */
 
-// Corners of the world the map image covers, in game coordinates. These are the
-// standard Los Santos + Blaine County bounds every GTA map render uses; a
-// differently-cropped image needs these changed to match it.
-const MAP = { minX: -4000, maxX: 4500, minY: -4300, maxY: 8200, src: 'map.jpg' }
+interface MapSpec {
+  url: string        // {z}/{x}/{y} tile template
+  s: number          // z4 map pixels per game metre
+  ox: number         // z4 map px at world X 0
+  oy: number         // z4 map px at world Y 0 (Y is flipped: +Y north is up)
+  minZ: number
+  maxZ: number
+}
+// Calibrated against 6428 checkpoints from the tracks in this repo: the affine
+// that puts the most checkpoints on road pixels. Peak is sharp — score drops
+// ~6% at ±33 m — so this is the fit, not a plateau. 1 z4 pixel = 4.12 m.
+const DEFAULT_MAP: MapSpec = {
+  url: 'https://s.rsg.sc/sc/images/games/GTAV/map/game/{z}/{x}/{y}.jpg',
+  s: 0.2428,
+  ox: 780.13,
+  oy: 1945.38,
+  // Below z2 the grid stops being an exact halving (z1 is 1x2, z0 is 1x1, both
+  // padded), so the affine no longer lines up — z2 is the widest usable level.
+  minZ: 2,
+  maxZ: 6,
+}
+// Overridable from the openPoll payload (data.map) — a different tile set or a
+// re-calibration needs no UI rebuild.
+let MAP: MapSpec = DEFAULT_MAP
 
-const VIEW_W = 300
-const VIEW_H = 132
+// z4 grid is 8x12 tiles; every level up doubles both axes.
+const tilesX = (z: number) => Math.ceil(8 * Math.pow(2, z - 4))
+const tilesY = (z: number) => Math.ceil(12 * Math.pow(2, z - 4))
+
+const VIEW_W = 248
+const VIEW_H = 140
 
 /** Catmull-Rom through every point as cubic beziers: the checkpoints are metres
  *  apart, and straight segments between them read as a jagged polygon rather
@@ -77,7 +103,9 @@ function gridLines(
 }
 
 const TrackMap = ({ path, loop, index }: { path?: { x: number; y: number }[]; loop?: boolean; index: number }) => {
-  const [noMap, setNoMap] = useState(false)
+  // Tiles drop out individually; the grid only takes over once none loaded, so
+  // one bad tile never costs the whole map.
+  const [dead, setDead] = useState<Record<string, true>>({})
   if (!path || path.length < 2) return null
 
   // Track bounds, squared off and padded so the route sits centred with a
@@ -91,7 +119,7 @@ const TrackMap = ({ path, loop, index }: { path?: { x: number; y: number }[]; lo
   }
   const spanX = Math.max(maxX - minX, 1)
   const spanY = Math.max(maxY - minY, 1)
-  const pad = 0.14
+  const pad = 0.1
   const scale = Math.min(VIEW_W / (spanX * (1 + pad * 2)), VIEW_H / (spanY * (1 + pad * 2)))
   const cx = (minX + maxX) / 2
   const cy = (minY + maxY) / 2
@@ -106,6 +134,35 @@ const TrackMap = ({ path, loop, index }: { path?: { x: number; y: number }[]; lo
 
   const clipId = `trackclip${index}`
   const gradId = `trackgrad${index}`
+  const mapFxId = `mapfx${index}`
+
+  /* Tile layer. Pick the zoom whose pixels are closest to the card's own, so a
+     tight sprint pulls sharp tiles and a cross-map circuit does not fetch
+     hundreds of them; then request only the tiles the card actually shows. */
+  const zoom = Math.max(MAP.minZ, Math.min(MAP.maxZ,
+    Math.round(4 + Math.log2(Math.max(scale / MAP.s, 1e-6)))))
+  const k = Math.pow(2, zoom - 4)          // map px per z4 px at this zoom
+  const f = scale / (MAP.s * k)            // card px per map px at this zoom
+  // Card px for a given map px, on both axes (the two are the same affine).
+  const cardX = (mp: number) => px((mp / k - MAP.ox) / MAP.s)
+  const cardY = (mp: number) => py((MAP.oy - mp / k) / MAP.s)
+  const tiles: { key: string; href: string; x: number; y: number }[] = []
+  const tx0 = Math.max(0, Math.floor((0 - cardX(0)) / (256 * f)))
+  const tx1 = Math.min(tilesX(zoom) - 1, Math.floor((VIEW_W - cardX(0)) / (256 * f)))
+  const ty0 = Math.max(0, Math.floor((0 - cardY(0)) / (256 * f)))
+  const ty1 = Math.min(tilesY(zoom) - 1, Math.floor((VIEW_H - cardY(0)) / (256 * f)))
+  for (let tx = tx0; tx <= tx1; tx++) {
+    for (let ty = ty0; ty <= ty1; ty++) {
+      const key = `${zoom}/${tx}/${ty}`
+      if (dead[key]) continue
+      tiles.push({
+        key,
+        href: MAP.url.replace('{z}', String(zoom)).replace('{x}', String(tx)).replace('{y}', String(ty)),
+        x: cardX(tx * 256),
+        y: cardY(ty * 256),
+      })
+    }
+  }
 
   return (
     <div class="poll-map">
@@ -116,25 +173,39 @@ const TrackMap = ({ path, loop, index }: { path?: { x: number; y: number }[]; lo
             <stop offset="0%" stop-color="var(--color-primary)" />
             <stop offset="100%" stop-color="var(--color-secondary, var(--color-primary))" />
           </linearGradient>
+          {/* Social Club tiles are a bright paper map; knock them back so they
+              read as terrain under the route rather than competing with it. */}
+          <filter id={mapFxId} color-interpolation-filters="sRGB">
+            <feColorMatrix type="saturate" values="0.25" />
+            <feComponentTransfer>
+              <feFuncR type="linear" slope="0.30" intercept="0.015" />
+              <feFuncG type="linear" slope="0.32" intercept="0.025" />
+              <feFuncB type="linear" slope="0.38" intercept="0.045" />
+            </feComponentTransfer>
+          </filter>
         </defs>
 
         <g clip-path={`url(#${clipId})`}>
-          {!noMap && (
-            <image
-              href={MAP.src}
-              x={px(MAP.minX)}
-              y={py(MAP.maxY)}
-              width={(MAP.maxX - MAP.minX) * scale}
-              height={(MAP.maxY - MAP.minY) * scale}
-              preserveAspectRatio="none"
-              opacity="0.55"
-              onError={() => setNoMap(true)}
-            />
+          {tiles.length > 0 && (
+            <g filter={`url(#${mapFxId})`}>
+              {tiles.map(t => (
+                <image
+                  key={t.key}
+                  href={t.href}
+                  x={t.x}
+                  y={t.y}
+                  width={256 * f + 0.5}   /* half-pixel bleed hides seams */
+                  height={256 * f + 0.5}
+                  preserveAspectRatio="none"
+                  onError={() => setDead(prev => ({ ...prev, [t.key]: true }))}
+                />
+              ))}
+            </g>
           )}
-          {/* No map image: a 200 m grid pinned to world coordinates, so the
-              plot still carries a sense of scale and of the track drifting
-              across the world as it turns. */}
-          {noMap && gridLines(minX, maxX, minY, maxY, px, py)}
+          {/* No tiles: a 200 m grid pinned to world coordinates, so the plot
+              still carries a sense of scale and of the track drifting across
+              the world as it turns. */}
+          {tiles.length === 0 && gridLines(minX, maxX, minY, maxY, px, py)}
 
           {/* Cast shadow first so the route reads over busy map detail. */}
           <path d={d} fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="5"
@@ -154,7 +225,6 @@ const TrackMap = ({ path, loop, index }: { path?: { x: number; y: number }[]; lo
           )}
         </g>
       </svg>
-      <div class="poll-map-fade" />
     </div>
   )
 }
@@ -203,6 +273,7 @@ export function App() {
         applyTheme(theme)
       } else if (action === 'openPoll') {
         const opts: PollOption[] = data.options || []
+        MAP = { ...DEFAULT_MAP, ...(data.map || {}) }
         setPhase(data.phase || 'track')
         setOptions(opts)
         setDuration(data.duration || 30)
@@ -244,27 +315,48 @@ export function App() {
 
   return (
     <div class="poll-overlay" data-phase={phase}>
-      <div class="poll-header">
-        <div class="poll-phase-label">
-          {phase === 'track' ? 'Track Selection' : phase === 'traffic' ? 'Traffic Selection' : 'Vehicle Selection'}
+      <div class="poll-stack">
+        <div class="poll-header">
+          <div class="poll-phase-label">
+            {phase === 'track' ? 'Track' : phase === 'traffic' ? 'Traffic' : 'Vehicle'}
+          </div>
+          <h1 class="poll-main-title">
+            {phase === 'track' ? 'Choose Your Path' : phase === 'traffic' ? 'Set Road Density' : 'Select Performance'}
+          </h1>
+          <span class="poll-countdown" data-urgent={timer < 20}>
+            {Math.ceil((timer / 100) * duration)}s
+          </span>
         </div>
-        <h1 class="poll-main-title">
-          {phase === 'track' ? 'Choose Your Path' : phase === 'traffic' ? 'Set Road Density' : 'Select Performance'}
-        </h1>
-      </div>
 
-      <div class="poll-options">
+        <div class="poll-timer-track">
+          <div class="poll-timer-fill" style={{ width: `${timer}%` }} />
+        </div>
+
+        <div class="poll-options">
         {options.map((opt, i) => (
+          /* Map and details are two separate cards: the plot is a picture, the
+             details are text, and stacking them as one block made the text read
+             as a caption burnt into the map. */
           <div
             key={i}
-            class="poll-card"
+            class="poll-option"
             data-selected={votedIndex === i}
             onClick={() => vote(i)}
           >
-            <span class="poll-bg-num">{i + 1}</span>
-            {winnerIndex === i && <div class="winner-ring" />}
-            {phase === 'track' && <TrackMap path={opt.path} loop={opt.loop} index={i} />}
-            <div class="poll-content">
+            {phase === 'track' && opt.path && opt.path.length > 1 && (
+              <div class="poll-card poll-card-map">
+                <span class="poll-bg-num">{i + 1}</span>
+                {winnerIndex === i && <div class="winner-ring" />}
+                <TrackMap path={opt.path} loop={opt.loop} index={i} />
+              </div>
+            )}
+            <div class="poll-card poll-content">
+              {!(phase === 'track' && opt.path && opt.path.length > 1) && (
+                <>
+                  <span class="poll-bg-num">{i + 1}</span>
+                  {winnerIndex === i && <div class="winner-ring" />}
+                </>
+              )}
               <div class="poll-title">{opt.label || opt.name}</div>
               <div class="poll-meta">
                 {phase === 'track' ? (
@@ -282,21 +374,10 @@ export function App() {
                   </>
                 )}
               </div>
+              {votedIndex === i && <div class="poll-selected-bar" />}
             </div>
-            {votedIndex === i && <div class="poll-selected-bar" />}
           </div>
         ))}
-      </div>
-
-      <div class="poll-timer-wrap">
-        <div class="spz-progress">
-          <div class="spz-progress-fill" style={{ width: `${timer}%` }} />
-        </div>
-        <div class="poll-timer-meta">
-          <span>Session Timer</span>
-          <span style={{ color: timer < 20 ? '#FF3D55' : 'var(--gray-50)' }}>
-            {Math.ceil((timer / 100) * duration)}s
-          </span>
         </div>
       </div>
     </div>

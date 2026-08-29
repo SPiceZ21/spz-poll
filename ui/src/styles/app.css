@@ -1,105 +1,172 @@
 #root { pointer-events: auto; }
 
+/* Bottom-anchored HUD strip. No panel behind it — the cards themselves are the
+   only chrome, so the game stays readable through the gaps. */
 .poll-overlay {
   position: fixed;
-  inset: 0;
+  inset: auto 0 0 0;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 32px;
+  padding: 0 24px 30px;
   pointer-events: none;
 }
 
-.poll-header { text-align: center; animation: spz-in 400ms var(--anim-ease); }
+.poll-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+  animation: poll-rise 320ms var(--anim-ease);
+}
+@keyframes poll-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.poll-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
 .poll-phase-label {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-primary);
-  margin-bottom: 8px;
 }
 .poll-main-title {
   font-family: var(--font-primary);
-  font-weight: 800;
-  font-size: 42px;
+  font-weight: 700;
+  font-size: 13px;
   color: var(--gray-50);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin: 0;
 }
+.poll-countdown {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-50);
+}
+.poll-countdown[data-urgent="true"] { color: #FF3D55; }
+
+/* Timer spans the row of cards: one hairline, no labels. */
+.poll-timer-track {
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+.poll-timer-fill {
+  height: 100%;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.6);
+  transition: width 100ms linear;
+}
 
 .poll-options {
   display: flex;
-  gap: 20px;
-  animation: spz-in 500ms var(--anim-ease);
+  gap: 10px;
 }
+
+/* An option is two cards: the track plot, then the details under it. Keeping
+   them apart lets the plot stay a clean picture with nothing burnt over it. */
+.poll-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 248px;
+  cursor: pointer;
+  transition: transform 120ms var(--anim-ease);
+  user-select: none;
+  /* The overlay is click-through so the game stays playable around the poll —
+     the options themselves have to opt back in or votes never land. */
+  pointer-events: auto;
+}
+.poll-option:hover { transform: translateY(-2px); }
 
 .poll-card {
   position: relative;
-  width: 300px;
-  background: var(--gray-900);
-  border: 1px solid var(--gray-800);
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
-  cursor: pointer;
-  transition: transform 120ms var(--anim-ease), border-color 120ms;
-  user-select: none;
-  pointer-events: auto;
+  background: #07090b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+  transition: border-color 120ms, box-shadow 120ms;
 }
-.poll-card:hover { transform: translateY(-2px); border-color: var(--gray-700); }
-.poll-card[data-selected="true"] {
+.poll-option:hover .poll-card { border-color: rgba(255, 255, 255, 0.28); }
+.poll-option[data-selected="true"] .poll-card {
   border-color: var(--color-primary);
-  box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.25), 0 0 0 1px rgba(var(--color-primary-rgb), 0.15);
+  box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.3), 0 8px 22px rgba(0, 0, 0, 0.55);
 }
 
+/* Option number: corner chip — a compact card has no room for a watermark. */
 .poll-bg-num {
   position: absolute;
-  right: 8px;
-  bottom: -12px;
-  font-family: var(--font-primary);
-  font-size: 84px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.03);
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-300);
   line-height: 1;
   pointer-events: none;
 }
 
-/* Track preview: the route over the map, sitting above the card's text block. */
+/* Track preview. Near-square so a full lap fits at a usable size instead of
+   shrinking to fit a letterbox. */
 .poll-map {
   position: relative;
-  height: 132px;
+  height: 140px;
   background: #0a0c0f;
-  border-bottom: 1px solid var(--gray-800);
-  overflow: hidden;
 }
 .poll-map svg { display: block; width: 100%; height: 100%; }
-/* Bleed the bottom edge into the card so the map ends rather than stops. */
-.poll-map-fade {
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 42px;
-  background: linear-gradient(to bottom, transparent, var(--gray-900));
-  pointer-events: none;
-}
 
-.poll-content { position: relative; z-index: 1; padding: 16px 18px; }
+/* No backdrop-filter here: CEF composites it against an opaque surface, so on a
+   transparent NUI page it paints a black slab instead of blurring the game. */
+.poll-content {
+  padding: 9px 10px 10px;
+  background: rgba(8, 10, 13, 0.92);
+}
+/* Phases with no plot (vehicle/traffic) carry the number chip here instead, so
+   the text needs a row cleared for it. */
+.poll-option:not(:has(.poll-card-map)) .poll-content { padding-top: 26px; }
 .poll-title {
   font-family: var(--font-primary);
   font-weight: 600;
-  font-size: 16px;
+  font-size: 13px;
   color: var(--gray-50);
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
-.poll-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.poll-meta { display: flex; flex-wrap: wrap; gap: 5px; }
 .poll-selected-bar {
   position: absolute;
   bottom: 0;
   left: 0;
+  z-index: 3;
   height: 2px;
   background: var(--color-primary);
   width: 100%;
@@ -112,56 +179,30 @@
   border-radius: inherit;
   animation: winner-pulse 1s infinite;
   pointer-events: none;
+  z-index: 4;
 }
 @keyframes winner-pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
 }
 
-.poll-timer-wrap {
-  width: 400px;
-  animation: spz-in 600ms var(--anim-ease);
-}
-.spz-progress {
-  height: 6px;
-  background: var(--gray-800);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-.spz-progress-fill {
-  height: 100%;
-  background: var(--color-primary);
-  transition: width 100ms linear;
-  border-radius: 9999px;
-}
-.poll-timer-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--gray-500);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
 .spz-inline-badge {
   display: inline-flex;
   align-items: center;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 4px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 3px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  border: 1px solid var(--gray-700);
-  background: var(--gray-800);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.45);
   color: var(--gray-300);
 }
 .spz-inline-badge.primary {
-  background: rgba(var(--color-primary-rgb), 0.12);
+  background: rgba(var(--color-primary-rgb), 0.16);
   color: var(--color-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
+  border-color: rgba(var(--color-primary-rgb), 0.4);
 }
