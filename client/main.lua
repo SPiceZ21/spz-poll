@@ -45,9 +45,14 @@ exports('StopPoll', StopPoll)
 exports('UpdatePoll', UpdatePoll)
 
 -- NUI Callbacks
+-- A ballot can carry a switch alongside the cards (the traffic phase votes on
+-- NPC cops that way instead of spending a whole extra phase on one yes/no), so
+-- the toggle position rides with the picked index in a single submission.
 RegisterNUICallback('pollVote', function(data, cb)
-    local index = data.index
-    TriggerServerEvent('SPZ:pollVote', { index = index })
+    TriggerServerEvent('SPZ:pollVote', {
+        index  = data.index,
+        toggle = data.toggle,
+    })
 
     cb('ok')
 end)
@@ -113,6 +118,33 @@ RegisterCommand('testpollcar', function(_, args)
               stats = { { label = "Speed", value = "84" }, { label = "Accel", value = "72" } } },
             { name = args[2] or "comet2",  label = "Comet",   subtext = "Class B",
               stats = { { label = "Speed", value = "91" }, { label = "Accel", value = "80" } } },
+        }
+    })
+    Citizen.SetTimeout(20000, function() StopPoll() end)
+end, false)
+
+-- Traffic ballot, including the switch it carries. This is the phase that votes
+-- NPC cops on or off (spz-races/server/poll.lua builds the real one), so the
+-- test has to send a `toggle` or the switch never renders.
+RegisterCommand('testpolltraffic', function()
+    StartPoll({
+        phase = "traffic",
+        timer = 20,
+        duration = 20,
+        step = 3,
+        steps = 3,
+        toggle = {
+            key      = "chase",
+            label    = "Cop Chase",
+            onLabel  = "COPS ON",
+            offLabel = "COPS OFF",
+            hint     = "Pick up a wanted level and police hunt you. Ramming and PIT only — they never shoot.",
+            default  = false,
+        },
+        options = {
+            { name = "none",  label = "No Traffic",    subtext = "Empty streets" },
+            { name = "light", label = "Light Traffic", subtext = "A few cars" },
+            { name = "heavy", label = "Heavy Traffic", subtext = "Busy roads" },
         }
     })
     Citizen.SetTimeout(20000, function() StopPoll() end)

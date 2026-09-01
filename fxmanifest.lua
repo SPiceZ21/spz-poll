@@ -21,7 +21,8 @@ server_scripts {
 
 exports {
     'StartPoll',
-    'StopPoll'
+    'StopPoll',
+    'UpdatePoll'
 }
 
 dependencies {

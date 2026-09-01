@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'preact/hooks'
 
+/* A switch carried by the ballot itself rather than given its own phase. The
+   traffic vote uses it for NPC cops: same question (how alive are the streets),
+   so it costs a click instead of a whole extra screen. */
+interface ToggleSpec {
+  key?: string
+  label?: string
+  onLabel?: string
+  offLabel?: string
+  hint?: string
+  default?: boolean
+}
+
 interface PollOption {
   label?: string
   name?: string
@@ -264,6 +276,16 @@ export function App() {
   const [timer, setTimer] = useState(100)
   const [votedIndex, setVotedIndex] = useState(-1)
   const [winnerIndex, setWinnerIndex] = useState(-1)
+  const [step, setStep] = useState(0)
+  const [steps, setSteps] = useState(0)
+  const [toggle, setToggle] = useState<ToggleSpec | null>(null)
+  const [toggleOn, setToggleOn] = useState(false)
+  /* Voting is per player and each pick is answered by the NEXT ballot, so the
+     only thing between a click and the next screen is one round trip. The
+     locked-in state is shown immediately and the stack flies out on the same
+     frame as the click — waiting for the server to say so is what made a fast
+     voter feel like they were queueing behind everyone else. */
+  const [pending, setPending] = useState(false)
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
@@ -280,6 +302,11 @@ export function App() {
         setTimer(100)
         setVotedIndex(-1)
         setWinnerIndex(-1)
+        setStep(data.step || 0)
+        setSteps(data.steps || 0)
+        setToggle(data.toggle || null)
+        setToggleOn(!!(data.toggle && data.toggle.default))
+        setPending(false)
         setVisible(true)
       } else if (action === 'updatePoll') {
         if (data.winner) setWinnerIndex(data.winner.index - 1)
@@ -306,16 +333,38 @@ export function App() {
     }).catch(() => {})
 
   const vote = (idx: number) => {
-    if (votedIndex !== -1 || winnerIndex !== -1) return
+    if (votedIndex !== -1 || winnerIndex !== -1 || pending) return
+    if (idx < 0 || idx >= options.length) return
     setVotedIndex(idx)
-    post('pollVote', { index: idx + 1 })
+    setPending(true)
+    // The switch (when the phase carries one) is submitted with the card, so a
+    // traffic vote is one click, not two screens.
+    post('pollVote', { index: idx + 1, toggle: toggle ? toggleOn : undefined })
   }
+
+  /* Number keys pick a card. On a controller-free pre-race the mouse is already
+     on the wheel, and "1, 1, 2" through the whole ballot is the fastest the
+     thing can physically be answered. Space flips the switch when there is one. */
+  useEffect(() => {
+    if (!visible) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat) return
+      if (e.key >= '1' && e.key <= '9') {
+        vote(parseInt(e.key, 10) - 1)
+      } else if (e.code === 'Space' && toggle && !pending) {
+        e.preventDefault()
+        setToggleOn(v => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [visible, options.length, votedIndex, winnerIndex, pending, toggle, toggleOn])
 
   if (!visible) return null
 
   return (
     <div class="poll-overlay" data-phase={phase}>
-      <div class="poll-stack">
+      <div class="poll-stack" data-pending={pending}>
         <div class="poll-header">
           <div class="poll-phase-label">
             {phase === 'track' ? 'Track' : phase === 'traffic' ? 'Traffic' : 'Vehicle'}
@@ -323,6 +372,15 @@ export function App() {
           <h1 class="poll-main-title">
             {phase === 'track' ? 'Choose Your Path' : phase === 'traffic' ? 'Set Road Density' : 'Select Performance'}
           </h1>
+          {/* How far through your own ballot you are. Three dots is the whole
+              promise: nobody is waiting on anybody, this ends when you finish. */}
+          {steps > 1 && (
+            <div class="poll-steps">
+              {Array.from({ length: steps }, (_, s) => (
+                <span key={s} class="poll-step-dot" data-state={s + 1 < step ? 'done' : s + 1 === step ? 'now' : 'next'} />
+              ))}
+            </div>
+          )}
           <span class="poll-countdown" data-urgent={timer < 20}>
             {Math.ceil((timer / 100) * duration)}s
           </span>
@@ -341,6 +399,7 @@ export function App() {
             key={i}
             class="poll-option"
             data-selected={votedIndex === i}
+            data-dimmed={votedIndex !== -1 && votedIndex !== i}
             onClick={() => vote(i)}
           >
             {phase === 'track' && opt.path && opt.path.length > 1 && (
@@ -378,6 +437,32 @@ export function App() {
             </div>
           </div>
         ))}
+        </div>
+
+        {/* The switch sits under the cards, not among them: it is a separate
+            question with the same answer button, and putting it in the row
+            would read as a fourth thing to pick one of. */}
+        {toggle && (
+          <div
+            class="poll-toggle"
+            data-on={toggleOn}
+            onClick={() => { if (!pending) setToggleOn(v => !v) }}
+          >
+            <span class="poll-toggle-label">{toggle.label || 'Option'}</span>
+            <span class="poll-toggle-hint">{toggle.hint}</span>
+            <span class="poll-toggle-switch">
+              <span class="poll-toggle-knob" />
+            </span>
+            <span class="poll-toggle-state">
+              {toggleOn ? (toggle.onLabel || 'ON') : (toggle.offLabel || 'OFF')}
+            </span>
+          </div>
+        )}
+
+        <div class="poll-hint">
+          {pending
+            ? 'Locked in…'
+            : `Press 1-${Math.min(9, options.length)} to pick${toggle ? ' · Space toggles' : ''}`}
         </div>
       </div>
     </div>

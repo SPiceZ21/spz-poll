@@ -206,3 +206,134 @@
   color: var(--color-primary);
   border-color: rgba(var(--color-primary-rgb), 0.4);
 }
+
+/* ── Ballot pace ─────────────────────────────────────────────────────────────
+   Voting runs per player, so a fast voter should never be looking at a screen
+   that has already been answered. The moment a card is clicked the stack lifts
+   away, and the next phase rises into the same spot — the wait for the server
+   is spent watching the transition rather than watching a frozen menu. */
+.poll-stack[data-pending="true"] {
+  animation: poll-sink 160ms var(--anim-ease) forwards;
+  pointer-events: none;
+}
+@keyframes poll-sink {
+  to { opacity: 0; transform: translateY(-10px) scale(0.985); }
+}
+
+/* The card you did not pick steps back rather than vanishing, so the choice
+   stays legible for the instant before the screen turns over. */
+.poll-option[data-dimmed="true"] { opacity: 0.35; }
+.poll-option[data-selected="true"] .poll-card {
+  animation: poll-lock 180ms var(--anim-ease);
+}
+@keyframes poll-lock {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+/* Progress through YOUR ballot — three dots, filled as you go. */
+.poll-steps {
+  display: flex;
+  gap: 4px;
+  margin-left: 6px;
+}
+.poll-step-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 140ms, box-shadow 140ms;
+}
+.poll-step-dot[data-state="done"] { background: rgba(var(--color-primary-rgb), 0.55); }
+.poll-step-dot[data-state="now"] {
+  background: var(--color-primary);
+  box-shadow: 0 0 6px rgba(var(--color-primary-rgb), 0.8);
+}
+
+/* ── Ballot switch ───────────────────────────────────────────────────────────
+   A yes/no that rides along with the cards (traffic votes NPC cops this way).
+   Full-width under the row so it reads as a modifier on the choice above it,
+   not as another option to choose between. */
+.poll-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: rgba(8, 10, 13, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+.poll-toggle:hover { border-color: rgba(255, 255, 255, 0.28); }
+.poll-toggle[data-on="true"] {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.28), 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+.poll-toggle-label {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--gray-50);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.poll-toggle-hint {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gray-300);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.poll-toggle-switch {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 140ms;
+}
+.poll-toggle[data-on="true"] .poll-toggle-switch { background: var(--color-primary); }
+.poll-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f5f6f7;
+  transition: transform 140ms var(--anim-ease);
+}
+.poll-toggle[data-on="true"] .poll-toggle-knob { transform: translateX(14px); }
+.poll-toggle-state {
+  flex: none;
+  width: 66px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--gray-300);
+}
+.poll-toggle[data-on="true"] .poll-toggle-state { color: var(--color-primary); }
+
+/* Keyboard shortcut line — the reason the ballot can be answered in three
+   keystrokes without touching the mouse. */
+.poll-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-300);
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
