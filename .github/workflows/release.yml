@@ -8,6 +8,14 @@ on:
 permissions:
   contents: write
 
+# One release run at a time per repo. Each run now deletes the previous
+# release before publishing its own, so two pushes close together would
+# otherwise race: the second run could delete the release the first one had
+# only just created, and leave the repo with nothing published at all.
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -96,6 +104,26 @@ jobs:
           else
             git log ${LAST_TAG}..HEAD --oneline --no-merges >> release_notes.md
           fi
+
+      # Runs AFTER the notes step on purpose. The notes are "commits since the
+      # previous release", worked out from that release's tag — which the
+      # checkout above fetched. Deleting it any earlier would leave nothing to
+      # diff against, and every release would fall back to the last 20 commits.
+      - name: Remove previous releases
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # --cleanup-tag removes the git tag along with the release, so the
+          # tag list stays as short as the release list instead of piling up
+          # one date-stamped tag per push forever.
+          gh release list --repo "${{ github.repository }}" --limit 100 \
+            --json tagName --jq '.[].tagName' |
+          while read -r tag; do
+            [ -z "$tag" ] && continue
+            echo "Removing previous release $tag"
+            gh release delete "$tag" --repo "${{ github.repository }}" --yes --cleanup-tag
+          done
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
