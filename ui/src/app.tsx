@@ -12,9 +12,19 @@ interface ToggleSpec {
   default?: boolean
 }
 
+/* The "give us a different set" tick. Counted as a majority of the players who
+   voted, at the close — see spz-races/server/poll.lua. The count rides in so
+   the button can show whether it is actually going to carry. */
+interface RerollSpec {
+  enabled?: boolean
+  active?: boolean
+}
+
 interface PollOption {
   label?: string
   name?: string
+  brand?: string                      // manufacturer, resolved client-side
+  code?: string                       // spawn code — the model name itself
   type?: string
   laps?: number
   checkpointCount?: number
@@ -286,6 +296,7 @@ export function App() {
      frame as the click — waiting for the server to say so is what made a fast
      voter feel like they were queueing behind everyone else. */
   const [pending, setPending] = useState(false)
+  const [reroll, setReroll] = useState<RerollSpec | null>(null)
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
@@ -306,10 +317,15 @@ export function App() {
         setSteps(data.steps || 0)
         setToggle(data.toggle || null)
         setToggleOn(!!(data.toggle && data.toggle.default))
+        setReroll(data.reroll || null)
         setPending(false)
         setVisible(true)
       } else if (action === 'updatePoll') {
         if (data.winner) setWinnerIndex(data.winner.index - 1)
+        // Someone ticked reroll, or another ballot came in and moved the
+        // threshold. Merged rather than replaced: this arrives between phases
+        // and must not wipe the rest of the ballot's state.
+        if (data.reroll) setReroll(r => ({ ...(r || {}), ...data.reroll }))
       } else if (action === 'closePoll') {
         setVisible(false)
       }
@@ -331,6 +347,16 @@ export function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }).catch(() => {})
+
+  /* Toggling this does not restart anything — it records a position that is
+     counted when the poll closes. That is the whole reason it is safe to leave
+     on screen during someone else's vote. */
+  const toggleReroll = () => {
+    if (!reroll?.enabled || winnerIndex !== -1) return
+    const next = !reroll.active
+    setReroll(r => ({ ...(r || {}), active: next }))
+    post('pollReroll', { on: next })
+  }
 
   const vote = (idx: number) => {
     if (votedIndex !== -1 || winnerIndex !== -1 || pending) return
@@ -416,7 +442,15 @@ export function App() {
                   {winnerIndex === i && <div class="winner-ring" />}
                 </>
               )}
+              {/* Manufacturer above, model as the title, spawn code below.
+                  The brand and the code are only present on vehicle cards
+                  (spz-poll/client/main.lua fills them in from the game's own
+                  labels), and each is dropped rather than shown empty: a pack
+                  car with no manufacturer text would otherwise get a blank
+                  line where every other card has one. */}
+              {opt.brand && <div class="poll-brand">{opt.brand}</div>}
               <div class="poll-title">{opt.label || opt.name}</div>
+              {opt.code && <div class="poll-code">{opt.code}</div>}
               <div class="poll-meta">
                 {phase === 'track' ? (
                   <>
@@ -442,6 +476,28 @@ export function App() {
         {/* The switch sits under the cards, not among them: it is a separate
             question with the same answer button, and putting it in the row
             would read as a fourth thing to pick one of. */}
+        {reroll?.enabled && (
+          <div
+            class="poll-reroll"
+            data-on={reroll.active === true}
+            onClick={toggleReroll}
+          >
+            <span class="poll-reroll-mark" aria-hidden="true" />
+            <span class="poll-reroll-label">
+              {reroll.active ? 'Reroll requested' : 'Reroll the set'}
+            </span>
+            {/* No running count.
+                It was "1 of 3 needed" — how many had asked against how many it
+                would take — and next to the phase dots ("2 of 3") it read as a
+                second progress counter. Two fractions on one bar is one too
+                many, and the tick is a position, not a scoreboard: what the
+                player needs to know is that most of the field has to agree. */}
+            <span class="poll-reroll-hint">
+              Most votes redraws tracks &amp; cars
+            </span>
+          </div>
+        )}
+
         {toggle && (
           <div
             class="poll-toggle"

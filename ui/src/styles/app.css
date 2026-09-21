@@ -161,6 +161,34 @@
   text-overflow: ellipsis;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
+.poll-brand {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(var(--color-primary-rgb), 0.9);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The spawn code, set as what it is: a string you type. Monospace and lower
+   case so it is never mistaken for more of the car's name — it is the handle
+   for spawning this car again from the spawner later, which for an add-on is
+   the only one a player has. */
+.poll-code {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--gray-400, rgba(255, 255, 255, 0.42));
+  margin: -3px 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .poll-meta { display: flex; flex-wrap: wrap; gap: 5px; }
 .poll-selected-bar {
   position: absolute;
@@ -170,6 +198,67 @@
   height: 2px;
   background: var(--color-primary);
   width: 100%;
+}
+
+/* ── Reroll ────────────────────────────────────────────────────────────────
+ *
+ * Sits under the cards with the cop switch, not among them: it is not a fourth
+ * thing to pick, it is a position on the whole ballot. Deliberately quieter
+ * than the cards — it is the escape hatch, not the question.
+ */
+.poll-reroll {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px auto 0;
+  padding: 7px 12px;
+  cursor: pointer;
+  /* The page is pointer-events: none so the game keeps the cursor; anything
+     clickable has to opt back in. Without this the row renders, highlights
+     nothing and silently swallows every click. */
+  pointer-events: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 10, 13, 0.92);
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.poll-reroll:hover { border-color: rgba(255, 255, 255, 0.22); }
+
+.poll-reroll[data-on="true"] {
+  border-color: rgba(var(--color-primary-rgb), 0.65);
+  background: linear-gradient(180deg, rgba(var(--color-primary-rgb), 0.14), rgba(8, 10, 13, 0.92));
+}
+
+/* An empty box that fills when ticked — the same affordance as a checkbox,
+   without pretending to be a form control. */
+.poll-reroll-mark {
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.poll-reroll[data-on="true"] .poll-reroll-mark {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.7);
+}
+
+.poll-reroll-label {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray-50);
+}
+
+.poll-reroll-hint {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.34);
 }
 
 .winner-ring {
