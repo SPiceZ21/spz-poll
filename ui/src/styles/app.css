@@ -312,6 +312,8 @@
 /* The card you did not pick steps back rather than vanishing, so the choice
    stays legible for the instant before the screen turns over. */
 .poll-option[data-dimmed="true"] { opacity: 0.35; }
+/* "None of these": quieter than the real options, dashed so it reads as an escape, not a pick. */
+.poll-option[data-reroll="true"] .poll-content { border-style: dashed; opacity: 0.85; }
 .poll-option[data-selected="true"] .poll-card {
   animation: poll-lock 180ms var(--anim-ease);
 }

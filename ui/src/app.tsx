@@ -33,6 +33,7 @@ interface PollOption {
   stats?: { label: string; value: string }[]
   path?: { x: number; y: number }[]   // track route, world XY, in lap order
   loop?: boolean                      // circuit: the route closes on itself
+  reroll?: boolean                    // "none of these" card (spz-races poll.lua)
 }
 
 /* ── Track preview ───────────────────────────────────────────
@@ -426,6 +427,7 @@ export function App() {
             class="poll-option"
             data-selected={votedIndex === i}
             data-dimmed={votedIndex !== -1 && votedIndex !== i}
+            data-reroll={opt.reroll === true}
             onClick={() => vote(i)}
           >
             {phase === 'track' && opt.path && opt.path.length > 1 && (
@@ -452,7 +454,9 @@ export function App() {
               <div class="poll-title">{opt.label || opt.name}</div>
               {opt.code && <div class="poll-code">{opt.code}</div>}
               <div class="poll-meta">
-                {phase === 'track' ? (
+                {opt.reroll ? (
+                  <span class="spz-inline-badge">{opt.subtext || 'None of these'}</span>
+                ) : phase === 'track' ? (
                   <>
                     <span class="spz-inline-badge primary">{(opt.type || 'Circuit').toUpperCase()}</span>
                     <span class="spz-inline-badge">{opt.laps || 3} Laps</span>
