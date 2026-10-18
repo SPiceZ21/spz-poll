@@ -3,7 +3,7 @@ game 'gta5'
 
 description 'SPiceZ Poll Module'
 author 'SPiceZ'
-version '1.6.0'
+version '1.7.0'
 
 ui_page 'ui/dist/index.html'
 
