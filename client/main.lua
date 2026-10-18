@@ -30,6 +30,23 @@ local function labelOrNil(gxt)
     return text
 end
 
+local shotBase, shotFmt
+local function carPhoto(model)
+    local primary
+    if GetResourceState("spz-carspawner") == "started"
+    and LoadResourceFile("spz-carspawner", "ui/img/" .. model .. ".png") then
+        primary = ("https://cfx-nui-spz-carspawner/ui/img/%s.png"):format(model)
+    end
+    if shotBase == nil and GetResourceState("uz_AutoShot") == "started" then
+        local ok, base = pcall(function() return exports["uz_AutoShot"]:getShotsBaseURL() end)
+        local okF, fmt = pcall(function() return exports["uz_AutoShot"]:getPhotoFormat() end)
+        if ok and base then shotBase, shotFmt = base .. "/vehicles", (okF and fmt) or "png" end
+    end
+    local shot = shotBase and ("%s/%s.%s"):format(shotBase, model, shotFmt) or nil
+    if primary then return primary, shot end
+    return shot, nil
+end
+
 --- Adds `brand` and `code` to a vehicle option, and upgrades `label` to the
 --- game's display name when there is one.
 local function describeVehicle(opt)
@@ -41,6 +58,10 @@ local function describeVehicle(opt)
     -- what a player types into the spawner to try the car again later, and for
     -- an add-on it is the only handle they have on it.
     opt.code = model:lower()
+
+    -- Photo: spz-carspawner's ui/img/<model>.png first, then the uz_AutoShot
+    -- capture. The page drops the picture if neither loads.
+    opt.img, opt.imgAlt = carPhoto(opt.code)
 
     local hash = GetHashKey(model)
     if not IsModelInCdimage(hash) then return end

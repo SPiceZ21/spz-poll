@@ -147,7 +147,10 @@
 }
 /* Phases with no plot (vehicle/traffic) carry the number chip here instead, so
    the text needs a row cleared for it. */
-.poll-option:not(:has(.poll-card-map)) .poll-content { padding-top: 26px; }
+.poll-option[data-pic="false"] .poll-content { padding-top: 26px; }
+/* Car photo card (vehicle ballot). */
+.poll-card-car { height: 132px; background: radial-gradient(circle at 50% 70%, #1a1d22 0%, #07090b 75%); }
+.poll-car-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .poll-title {
   font-family: var(--font-primary);
   font-weight: 600;

@@ -34,6 +34,23 @@ interface PollOption {
   path?: { x: number; y: number }[]   // track route, world XY, in lap order
   loop?: boolean                      // circuit: the route closes on itself
   reroll?: boolean                    // "none of these" card (spz-races poll.lua)
+  img?: string                        // car photo (spz-poll/client/main.lua)
+  imgAlt?: string                     // fallback photo if img fails
+}
+
+/* Car photo: tries img, then imgAlt, then removes itself. */
+function CarPhoto({ src, alt }: { src: string; alt?: string }) {
+  const [url, setUrl] = useState<string | null>(src)
+  useEffect(() => { setUrl(src) }, [src])
+  if (!url) return null
+  return (
+    <img
+      class="poll-car-img"
+      src={url}
+      alt=""
+      onError={() => setUrl(url === src && alt ? alt : null)}
+    />
+  )
 }
 
 /* ── Track preview ───────────────────────────────────────────
@@ -428,8 +445,16 @@ export function App() {
             data-selected={votedIndex === i}
             data-dimmed={votedIndex !== -1 && votedIndex !== i}
             data-reroll={opt.reroll === true}
+            data-pic={(phase === 'track' && !!opt.path && opt.path.length > 1) || (phase === 'vehicle' && !!opt.img && !opt.reroll)}
             onClick={() => vote(i)}
           >
+            {phase === 'vehicle' && opt.img && !opt.reroll && (
+              <div class="poll-card poll-card-car">
+                <span class="poll-bg-num">{i + 1}</span>
+                {winnerIndex === i && <div class="winner-ring" />}
+                <CarPhoto src={opt.img} alt={opt.imgAlt} />
+              </div>
+            )}
             {phase === 'track' && opt.path && opt.path.length > 1 && (
               <div class="poll-card poll-card-map">
                 <span class="poll-bg-num">{i + 1}</span>
@@ -438,7 +463,8 @@ export function App() {
               </div>
             )}
             <div class="poll-card poll-content">
-              {!(phase === 'track' && opt.path && opt.path.length > 1) && (
+              {!(phase === 'track' && opt.path && opt.path.length > 1)
+                && !(phase === 'vehicle' && opt.img && !opt.reroll) && (
                 <>
                   <span class="poll-bg-num">{i + 1}</span>
                   {winnerIndex === i && <div class="winner-ring" />}
