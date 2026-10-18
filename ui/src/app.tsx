@@ -33,6 +33,7 @@ interface PollOption {
   stats?: { label: string; value: string }[]
   path?: { x: number; y: number }[]   // track route, world XY, in lap order
   loop?: boolean                      // circuit: the route closes on itself
+  pathKind?: 'line' | 'cp'            // driven lap (follows roads) | checkpoints
   reroll?: boolean                    // "none of these" card (spz-races poll.lua)
   img?: string                        // car photo (spz-poll/client/main.lua)
   imgAlt?: string                     // fallback photo if img fails
@@ -103,6 +104,15 @@ const VIEW_H = 140
 /** Catmull-Rom through every point as cubic beziers: the checkpoints are metres
  *  apart, and straight segments between them read as a jagged polygon rather
  *  than a road. */
+/** Straight legs: checkpoints can be hundreds of metres apart, and a spline
+ *  through them swings wide of every corner and off the roads entirely. */
+function straightPath(pts: { x: number; y: number }[], close: boolean): string {
+  if (pts.length < 2) return ''
+  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`
+  for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x.toFixed(1)} ${pts[i].y.toFixed(1)}`
+  return close ? d + ' Z' : d
+}
+
 function smoothPath(pts: { x: number; y: number }[], close: boolean): string {
   const n = pts.length
   if (n < 2) return ''
@@ -142,7 +152,7 @@ function gridLines(
   return out
 }
 
-const TrackMap = ({ path, loop, index }: { path?: { x: number; y: number }[]; loop?: boolean; index: number }) => {
+const TrackMap = ({ path, loop, index, kind }: { path?: { x: number; y: number }[]; loop?: boolean; index: number; kind?: 'line' | 'cp' }) => {
   // Tiles drop out individually; the grid only takes over once none loaded, so
   // one bad tile never costs the whole map.
   const [dead, setDead] = useState<Record<string, true>>({})
@@ -168,7 +178,8 @@ const TrackMap = ({ path, loop, index }: { path?: { x: number; y: number }[]; lo
   const py = (y: number) => VIEW_H / 2 - (y - cy) * scale
 
   const pts = path.map(p => ({ x: px(p.x), y: py(p.y) }))
-  const d = smoothPath(pts, !!loop)
+  // A driven lap is dense enough to smooth; checkpoints are not.
+  const d = kind === 'line' ? smoothPath(pts, !!loop) : straightPath(pts, !!loop)
   const start = pts[0]
   const finish = pts[pts.length - 1]
 
@@ -474,7 +485,7 @@ export function App() {
               <div class="poll-card poll-card-map">
                 <span class="poll-bg-num">{i + 1}</span>
                 {winnerIndex === i && <div class="winner-ring" />}
-                <TrackMap path={opt.path} loop={opt.loop} index={i} />
+                <TrackMap path={opt.path} loop={opt.loop} index={i} kind={opt.pathKind} />
               </div>
             )}
             <div class="poll-card poll-content">
