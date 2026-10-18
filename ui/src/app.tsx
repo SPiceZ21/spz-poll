@@ -448,6 +448,21 @@ export function App() {
             data-pic={(phase === 'track' && !!opt.path && opt.path.length > 1) || (phase === 'vehicle' && !!opt.img && !opt.reroll)}
             onClick={() => vote(i)}
           >
+            {opt.reroll ? (
+              /* "None of these": a slim tile the full height of the row, so it
+                 reads as an escape hatch next to the real options, not as a
+                 half-height card with nothing on top. */
+              <div class="poll-card poll-reroll-card">
+                {winnerIndex === i && <div class="winner-ring" />}
+                <svg class="rr-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 11a8 8 0 1 0-2.34 5.66" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+                  <path d="M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="rr-title">Reroll</span>
+                <span class="rr-sub">{opt.subtext || 'None of these'}</span>
+                {votedIndex === i && <div class="poll-selected-bar" />}
+              </div>
+            ) : (<>
             {phase === 'vehicle' && opt.img && !opt.reroll && (
               <div class="poll-card poll-card-car">
                 <span class="poll-bg-num">{i + 1}</span>
@@ -499,6 +514,7 @@ export function App() {
               </div>
               {votedIndex === i && <div class="poll-selected-bar" />}
             </div>
+            </>)}
           </div>
         ))}
         </div>
