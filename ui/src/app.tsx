@@ -451,7 +451,7 @@ export function App() {
              details are text, and stacking them as one block made the text read
              as a caption burnt into the map. */
           <div
-            key={i}
+            key={`${phase}:${opt.name ?? i}:${i}`}
             class="poll-option"
             data-selected={votedIndex === i}
             data-dimmed={votedIndex !== -1 && votedIndex !== i}
