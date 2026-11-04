@@ -3,7 +3,7 @@ game 'gta5'
 
 description 'SPiceZ Poll Module'
 author 'SPiceZ'
-version '1.7.2'
+version '1.7.3'
 
 -- ui_page 'ui/dist/index.html'  -- drawn by spz-hud now (web/public/apps/spz-poll); uncomment + drop the shim to roll back
 
