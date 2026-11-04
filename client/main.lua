@@ -33,9 +33,10 @@ end
 local shotBase, shotFmt
 local function carPhoto(model)
     local primary
-    if GetResourceState("spz-carspawner") == "started"
-    and LoadResourceFile("spz-carspawner", "ui/img/" .. model .. ".png") then
-        primary = ("https://cfx-nui-spz-carspawner/ui/img/%s.png"):format(model)
+    -- The car spawner's photos ship from spz-hud now (its copy of the spawner UI).
+    if GetResourceState("spz-hud") == "started"
+    and LoadResourceFile("spz-hud", "ui/apps/spz-carspawner/img/" .. model .. ".png") then
+        primary = ("https://cfx-nui-spz-hud/ui/apps/spz-carspawner/img/%s.png"):format(model)
     end
     if shotBase == nil and GetResourceState("uz_AutoShot") == "started" then
         local ok, base = pcall(function() return exports["uz_AutoShot"]:getShotsBaseURL() end)
